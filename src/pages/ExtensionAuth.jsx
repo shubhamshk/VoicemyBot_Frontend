@@ -12,40 +12,56 @@ const ExtensionAuth = () => {
             // 1. Immediate check
             const { data } = await supabase.auth.getSession();
             if (data?.session) {
-                console.log("[Cinematic Voice] Sending session to extension (onMount)...");
+                console.log("[Cinematic Voice] Session found, syncing to extension...");
                 
-                // Try to get extension ID from URL parameter (best practice)
+                // METHOD 1: Dispatch custom event for content script to catch
+                try {
+                    const event = new CustomEvent('CINEMATIC_AUTH_EVENT', {
+                        detail: { session: data.session }
+                    });
+                    window.dispatchEvent(event);
+                    console.log("[Cinematic Voice] ✓ Dispatched auth event to content script");
+                } catch (err) {
+                    console.error("[Cinematic Voice] Error dispatching event:", err);
+                }
+                
+                // METHOD 2: Store in localStorage for content script polling
+                try {
+                    localStorage.setItem('cinematicAuthSession', JSON.stringify({
+                        session: data.session,
+                        timestamp: Date.now()
+                    }));
+                    console.log("[Cinematic Voice] ✓ Stored session in localStorage");
+                } catch (err) {
+                    console.error("[Cinematic Voice] Error storing in localStorage:", err);
+                }
+                
+                // METHOD 3: Try direct chrome.runtime.sendMessage (if available)
                 const urlParams = new URLSearchParams(window.location.search);
                 const extensionId = urlParams.get('extensionId');
                 
-                // Check if chrome.runtime is available (means we're in an externally_connectable context)
-                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage && extensionId) {
                     try {
-                        // Send to extension using chrome.runtime.sendMessage
-                        // If extensionId is not in URL, sendMessage without it (works for externally_connectable)
+                        console.log("[Cinematic Voice] Attempting direct message to extension...");
+                        
                         const messageData = {
                             type: "CINEMATIC_AUTH_SUCCESS",
                             session: data.session
                         };
                         
-                        if (extensionId) {
-                            chrome.runtime.sendMessage(
-                                extensionId,
-                                messageData,
-                                (response) => {
-                                    if (chrome.runtime.lastError) {
-                                        console.error("[Cinematic Voice] Error sending to extension:", chrome.runtime.lastError.message);
-                                    } else {
-                                        console.log("[Cinematic Voice] Session sent successfully:", response);
-                                    }
+                        chrome.runtime.sendMessage(
+                            extensionId,
+                            messageData,
+                            (response) => {
+                                if (chrome.runtime.lastError) {
+                                    console.warn("[Cinematic Voice] Direct message failed:", chrome.runtime.lastError.message);
+                                } else {
+                                    console.log("[Cinematic Voice] ✓ Direct message sent successfully:", response);
                                 }
-                            );
-                        } else {
-                            // Try sending without extension ID (browser will find it via externally_connectable)
-                            console.warn("[Cinematic Voice] No extension ID in URL, attempting broadcast...");
-                        }
+                            }
+                        );
                     } catch (err) {
-                        console.error("[Cinematic Voice] Failed to send message:", err);
+                        console.warn("[Cinematic Voice] Direct messaging not available:", err);
                     }
                 }
             }
@@ -53,36 +69,59 @@ const ExtensionAuth = () => {
 
         syncSession();
 
-        // 2. Listen for auth state changes just in case
+        // 2. Listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                console.log("[Cinematic Voice] Sending session to extension (onAuthStateChange)...");
+            console.log("[Cinematic Voice] Auth state changed:", event);
+            
+            if (event === 'SIGNED_IN' && session) {
+                console.log("[Cinematic Voice] User signed in, syncing session...");
                 
+                // Dispatch event
+                try {
+                    const customEvent = new CustomEvent('CINEMATIC_AUTH_EVENT', {
+                        detail: { session: session }
+                    });
+                    window.dispatchEvent(customEvent);
+                    console.log("[Cinematic Voice] ✓ Dispatched auth event");
+                } catch (err) {
+                    console.error("[Cinematic Voice] Error dispatching event:", err);
+                }
+                
+                // Store in localStorage
+                try {
+                    localStorage.setItem('cinematicAuthSession', JSON.stringify({
+                        session: session,
+                        timestamp: Date.now()
+                    }));
+                    console.log("[Cinematic Voice] ✓ Stored in localStorage");
+                } catch (err) {
+                    console.error("[Cinematic Voice] Error storing:", err);
+                }
+                
+                // Try direct message
                 const urlParams = new URLSearchParams(window.location.search);
                 const extensionId = urlParams.get('extensionId');
                 
-                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage && extensionId) {
                     try {
                         const messageData = {
                             type: "CINEMATIC_AUTH_SUCCESS",
                             session: session
                         };
                         
-                        if (extensionId) {
-                            chrome.runtime.sendMessage(
-                                extensionId,
-                                messageData,
-                                (response) => {
-                                    if (chrome.runtime.lastError) {
-                                        console.error("[Cinematic Voice] Error sending to extension:", chrome.runtime.lastError.message);
-                                    } else {
-                                        console.log("[Cinematic Voice] Session sent successfully:", response);
-                                    }
+                        chrome.runtime.sendMessage(
+                            extensionId,
+                            messageData,
+                            (response) => {
+                                if (chrome.runtime.lastError) {
+                                    console.warn("[Cinematic Voice] Direct message failed:", chrome.runtime.lastError.message);
+                                } else {
+                                    console.log("[Cinematic Voice] ✓ Direct message sent:", response);
                                 }
-                            );
-                        }
+                            }
+                        );
                     } catch (err) {
-                        console.error("[Cinematic Voice] Failed to send message:", err);
+                        console.warn("[Cinematic Voice] Direct messaging not available:", err);
                     }
                 }
             }
