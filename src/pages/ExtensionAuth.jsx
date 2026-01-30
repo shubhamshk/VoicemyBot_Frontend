@@ -151,29 +151,20 @@ const ExtensionAuth = () => {
                         <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/50">
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                         </div>
-                        <h1 className="text-2xl font-bold mb-2">✓ Authenticated</h1>
-                        <p className="text-gray-400 mb-4 leading-relaxed">
-                            {sessionSent 
-                                ? "Your session has been sent to the extension. You can close this tab now."
-                                : "Syncing your session to the extension..."
-                            }
-                        </p>
                         
-                        {/* Debug console */}
-                        <div className="mt-6 mb-4 p-4 bg-black/30 rounded-lg text-left max-h-48 overflow-y-auto">
-                            <div className="text-xs font-mono text-green-400 space-y-1">
-                                {debugInfo.length === 0 ? (
-                                    <div className="text-gray-500">Initializing...</div>
-                                ) : (
-                                    debugInfo.map((msg, i) => (
-                                        <div key={i} className="whitespace-pre-wrap break-all">{msg}</div>
-                                    ))
-                                )}
+                        {/* Terminal-style success message */}
+                        <div className="mt-6 mb-6 p-6 bg-black/50 rounded-lg text-left border border-green-500/20">
+                            <div className="font-mono space-y-2">
+                                <div className="text-green-400 text-sm">
+                                    <span className="text-green-500">●</span> Login successful
+                                </div>
+                                <div className="text-green-400 text-sm">
+                                    <span className="text-green-500">●</span> Session synced to extension
+                                </div>
+                                <div className="text-green-400 text-sm mt-4 border-t border-green-500/20 pt-3">
+                                    <span className="text-green-300">→</span> Close this tab and your extension is ready to use
+                                </div>
                             </div>
-                        </div>
-                        
-                        <div className="text-sm text-gray-500 mb-4">
-                            Close this tab manually and open your extension
                         </div>
                     </>
                 ) : (
