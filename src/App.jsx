@@ -14,7 +14,7 @@ const ProtectedRoute = ({ children }) => {
   if (loading) return <div className="min-h-screen bg-black" />;
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/extension-auth" replace />;
   }
 
   return children;
@@ -56,6 +56,7 @@ function AppRoutes() {
       } />
 
       <Route path="/extension-auth" element={<ExtensionAuth />} />
+      <Route path="/login" element={<ExtensionAuth />} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

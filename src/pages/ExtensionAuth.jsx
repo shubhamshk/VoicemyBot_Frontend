@@ -8,8 +8,13 @@ const ExtensionAuth = () => {
 
     useEffect(() => {
         if (user) {
-            // Re-sync just in case
-            // The AuthContext already tries to sync on load
+            // 1. Save session to localStorage (Supabase does this but we ensure it matches extension expectation)
+            // The AuthContext already handles syncing to extension conceptually, 
+            // but we need to explicitly send the "Handshake Success" message to the opener window here.
+
+            if (window.opener) {
+                window.opener.postMessage({ type: "CINEMATIC_AUTH_SUCCESS" }, "*")
+            }
         }
     }, [user]);
 
@@ -30,30 +35,37 @@ const ExtensionAuth = () => {
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-10 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl text-center max-w-md w-full"
+                className="p-10 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl text-center max-w-md w-full relative overflow-hidden"
             >
+                {/* Logo Section */}
+                <div className="flex flex-col items-center mb-8">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20 mb-4 animate-pulse">
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-xl font-bold tracking-widest text-white">CINEMATIC VOICE</h2>
+                </div>
+
                 {user ? (
                     <>
                         <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/50">
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                         </div>
                         <h1 className="text-2xl font-bold mb-2">Authenticated</h1>
-                        <p className="text-gray-400 mb-8">You can now close this window and return to the extension.</p>
-                        <button className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all font-semibold w-full" onClick={() => window.close()}>
-                            Close Window
+                        <p className="text-gray-400 mb-8 leading-relaxed">You've logged in successfully. You can now safeley return to the extension.</p>
+                        <button className="px-6 py-4 rounded-xl bg-white/10 hover:bg-white/20 transition-all font-bold w-full border border-white/10" onClick={() => window.close()}>
+                            Close & Return
                         </button>
                     </>
                 ) : (
                     <>
-                        <div className="w-16 h-16 bg-purple-500/20 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-6 border border-purple-500/50">
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                        </div>
-                        <h1 className="text-2xl font-bold mb-2">Extension Login</h1>
-                        <p className="text-gray-400 mb-8">Sign in to unlock Pro features in the extension.</p>
+                        <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
+                        <p className="text-gray-400 mb-8 leading-relaxed">Login to use Cinematic Voice AI pro features.</p>
 
                         <div className="space-y-4 w-full">
                             <button
-                                onClick={loginWithGoogle}
+                                onClick={() => loginWithGoogle(`${window.location.origin}/extension-auth`)}
                                 className="w-full py-4 px-6 rounded-xl bg-white text-black font-bold hover:bg-gray-200 transition-all flex items-center justify-center gap-3 group"
                             >
                                 <img src="https://www.google.com/favicon.ico" alt="G" className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -61,7 +73,7 @@ const ExtensionAuth = () => {
                             </button>
 
                             <button
-                                onClick={loginWithDiscord}
+                                onClick={() => loginWithDiscord(`${window.location.origin}/extension-auth`)}
                                 className="w-full py-4 px-6 rounded-xl bg-[#5865F2] text-white font-bold hover:bg-[#4752C4] transition-all flex items-center justify-center gap-3 group"
                             >
                                 <svg className="w-6 h-6 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037 19.019 19.019 0 0 0-3.361 5.922 18.068 18.068 0 0 0-8.257 0 19.016 19.016 0 0 0-3.361-5.922.077.077 0 0 0-.08-.037 19.736 19.736 0 0 0-4.885 1.515.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.418 2.157-2.418 1.21 0 2.176 1.096 2.157 2.418 0 1.334-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.176 1.096 2.157 2.418 0 1.334-.946 2.419-2.157 2.419z" /></svg>

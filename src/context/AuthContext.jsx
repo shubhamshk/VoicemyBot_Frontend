@@ -65,21 +65,21 @@ export const AuthProvider = ({ children }) => {
         console.log('[Cinematic Voice] Session stored for extension (via postMessage)');
     };
 
-    const loginWithGoogle = async () => {
+    const loginWithGoogle = async (redirectUrl) => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/dashboard`,
+                redirectTo: redirectUrl || `${window.location.origin}/dashboard`,
             },
         });
         if (error) console.error('Login error:', error);
     };
 
-    const loginWithDiscord = async () => {
+    const loginWithDiscord = async (redirectUrl) => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'discord',
             options: {
-                redirectTo: `${window.location.origin}/dashboard`,
+                redirectTo: redirectUrl || `${window.location.origin}/dashboard`,
             },
         });
         if (error) console.error('Discord login error:', error);
