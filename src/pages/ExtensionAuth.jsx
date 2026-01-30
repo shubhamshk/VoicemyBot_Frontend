@@ -11,12 +11,43 @@ const ExtensionAuth = () => {
         const syncSession = async () => {
             // 1. Immediate check
             const { data } = await supabase.auth.getSession();
-            if (data?.session && window.opener) {
+            if (data?.session) {
                 console.log("[Cinematic Voice] Sending session to extension (onMount)...");
-                window.opener.postMessage({
-                    type: "CINEMATIC_AUTH_SUCCESS",
-                    session: data.session
-                }, "*");
+                
+                // Try to get extension ID from URL parameter (best practice)
+                const urlParams = new URLSearchParams(window.location.search);
+                const extensionId = urlParams.get('extensionId');
+                
+                // Check if chrome.runtime is available (means we're in an externally_connectable context)
+                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                    try {
+                        // Send to extension using chrome.runtime.sendMessage
+                        // If extensionId is not in URL, sendMessage without it (works for externally_connectable)
+                        const messageData = {
+                            type: "CINEMATIC_AUTH_SUCCESS",
+                            session: data.session
+                        };
+                        
+                        if (extensionId) {
+                            chrome.runtime.sendMessage(
+                                extensionId,
+                                messageData,
+                                (response) => {
+                                    if (chrome.runtime.lastError) {
+                                        console.error("[Cinematic Voice] Error sending to extension:", chrome.runtime.lastError.message);
+                                    } else {
+                                        console.log("[Cinematic Voice] Session sent successfully:", response);
+                                    }
+                                }
+                            );
+                        } else {
+                            // Try sending without extension ID (browser will find it via externally_connectable)
+                            console.warn("[Cinematic Voice] No extension ID in URL, attempting broadcast...");
+                        }
+                    } catch (err) {
+                        console.error("[Cinematic Voice] Failed to send message:", err);
+                    }
+                }
             }
         };
 
@@ -24,12 +55,36 @@ const ExtensionAuth = () => {
 
         // 2. Listen for auth state changes just in case
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (session && window.opener) {
+            if (session) {
                 console.log("[Cinematic Voice] Sending session to extension (onAuthStateChange)...");
-                window.opener.postMessage({
-                    type: "CINEMATIC_AUTH_SUCCESS",
-                    session: session
-                }, "*");
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const extensionId = urlParams.get('extensionId');
+                
+                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+                    try {
+                        const messageData = {
+                            type: "CINEMATIC_AUTH_SUCCESS",
+                            session: session
+                        };
+                        
+                        if (extensionId) {
+                            chrome.runtime.sendMessage(
+                                extensionId,
+                                messageData,
+                                (response) => {
+                                    if (chrome.runtime.lastError) {
+                                        console.error("[Cinematic Voice] Error sending to extension:", chrome.runtime.lastError.message);
+                                    } else {
+                                        console.log("[Cinematic Voice] Session sent successfully:", response);
+                                    }
+                                }
+                            );
+                        }
+                    } catch (err) {
+                        console.error("[Cinematic Voice] Failed to send message:", err);
+                    }
+                }
             }
         });
 
