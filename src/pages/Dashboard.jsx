@@ -1,11 +1,72 @@
 
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 const Dashboard = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, userProfile } = useAuth();
+    const [planData, setPlanData] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    if (!user) return null; // Should be handled by protected route wrapper ideally
+    useEffect(() => {
+        if (user) {
+            fetchPlanData();
+        }
+    }, [user]);
+
+    const fetchPlanData = async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                console.error('No session found');
+                setLoading(false);
+                return;
+            }
+
+            // Call verifyUserPlan edge function
+            const response = await fetch(
+                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-user-plan`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                setPlanData(data);
+            } else {
+                console.error('Failed to fetch plan data');
+            }
+        } catch (error) {
+            console.error('Error fetching plan:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!user) return null;
+
+    if (loading) {
+        return (
+            <div className="min-h-screen pt-24 px-4 bg-black text-white flex items-center justify-center">
+                <div className="text-xl">Loading dashboard...</div>
+            </div>
+        );
+    }
+
+    const plan = planData?.plan || 'free';
+    const normalUsed = planData?.normal_used_today || 0;
+    const cinematicUsed = planData?.cinematic_used_today || 0;
+    const isPro = plan === 'pro' || plan === 'ultra';
+
+    const normalLimit = isPro ? Infinity : 50;
+    const cinematicLimit = isPro ? Infinity : 10;
+    const normalPercent = isPro ? 100 : Math.min((normalUsed / normalLimit) * 100, 100);
+    const cinematicPercent = isPro ? 100 : Math.min((cinematicUsed / cinematicLimit) * 100, 100);
 
     return (
         <div className="min-h-screen pt-24 px-4 bg-black text-white relative overflow-hidden">
@@ -45,23 +106,84 @@ const Dashboard = () => {
                         <div className="p-6 rounded-2xl bg-black/40 border border-white/5">
                             <h3 className="text-lg text-gray-400 mb-2">Current Plan</h3>
                             <div className="text-2xl font-bold text-white flex items-center gap-2">
-                                Free Plan
-                                <span className="text-xs px-2 py-1 rounded-full bg-gray-700 text-gray-300">Basic</span>
+                                {isPro ? (
+                                    <>
+                                        {plan === 'ultra' ? 'Ultra' : 'Pro'} Plan
+                                        <span className="text-xs px-2 py-1 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
+                                            ⭐ {plan.toUpperCase()}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        Free Plan
+                                        <span className="text-xs px-2 py-1 rounded-full bg-gray-700 text-gray-300">Basic</span>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="p-6 rounded-2xl bg-black/40 border border-white/5">
-                            <h3 className="text-lg text-gray-400 mb-2">Voice Generations</h3>
-                            <div className="text-2xl font-bold text-white">0 / 50 <span className="text-sm text-gray-500 font-normal">this month</span></div>
-                            <div className="w-full h-2 bg-gray-800 rounded-full mt-3 overflow-hidden">
-                                <div className="w-[0%] h-full bg-gradient-to-r from-purple-500 to-blue-500" />
+                            <h3 className="text-lg text-gray-400 mb-2">Normal Voices Today</h3>
+                            <div className="text-2xl font-bold text-white">
+                                {isPro ? (
+                                    <>
+                                        <span className="text-green-400">Unlimited</span> 🎉
+                                    </>
+                                ) : (
+                                    <>
+                                        {normalUsed} / {normalLimit} <span className="text-sm text-gray-500 font-normal">today</span>
+                                    </>
+                                )}
                             </div>
+                            {!isPro && (
+                                <div className="w-full h-2 bg-gray-800 rounded-full mt-3 overflow-hidden">
+                                    <div 
+                                        className={`h-full ${normalUsed >= normalLimit ? 'bg-red-500' : 'bg-gradient-to-r from-purple-500 to-blue-500'}`}
+                                        style={{ width: `${normalPercent}%` }}
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-6 mb-8">
+                        <div className="p-6 rounded-2xl bg-black/40 border border-white/5">
+                            <h3 className="text-lg text-gray-400 mb-2">Cinematic Voices Today</h3>
+                            <div className="text-2xl font-bold text-white">
+                                {isPro ? (
+                                    <>
+                                        <span className="text-green-400">Unlimited</span> 🎉
+                                    </>
+                                ) : (
+                                    <>
+                                        {cinematicUsed} / {cinematicLimit} <span className="text-sm text-gray-500 font-normal">today</span>
+                                    </>
+                                )}
+                            </div>
+                            {!isPro && (
+                                <div className="w-full h-2 bg-gray-800 rounded-full mt-3 overflow-hidden">
+                                    <div 
+                                        className={`h-full ${cinematicUsed >= cinematicLimit ? 'bg-red-500' : 'bg-gradient-to-r from-cyan-500 to-purple-500'}`}
+                                        style={{ width: `${cinematicPercent}%` }}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     <div className="flex gap-4">
-                        <button className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transition-all font-semibold shadow-lg shadow-purple-500/20">
-                            Upgrade to Premium
-                        </button>
+                        {!isPro && (
+                            <a 
+                                href="/pricing"
+                                className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 transition-all font-semibold shadow-lg shadow-purple-500/20 text-center"
+                            >
+                                Upgrade to Pro - Unlimited Voices
+                            </a>
+                        )}
+                        {isPro && (
+                            <div className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-green-600/20 to-blue-600/20 border border-green-500/30 text-green-400 font-semibold text-center">
+                                ✓ You have unlimited access!
+                            </div>
+                        )}
                         <button
                             onClick={logout}
                             className="px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all text-gray-300"

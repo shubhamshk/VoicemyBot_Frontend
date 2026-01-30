@@ -63,31 +63,22 @@ export const AuthProvider = ({ children }) => {
         return () => subscription.unsubscribe();
     }, []);
 
-    const syncSessionToExtension = (session) => {
-        // 1. Store in localStorage (Supabase does this automatically usually, but we ensure it's available)
-        // Supabase client handles localStorage by default.
+    const syncSessionToExtension = async (session) => {
+        // 1. Store in localStorage (for website use)
+        localStorage.setItem('cinematic_session', JSON.stringify(session));
 
-        // 2. Send to extension
-        // We try multiple methods to reach the extension.
-
-        // Method A: chrome.runtime.sendMessage (requires externally_connectable in manifest)
-        if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
-            const EXTENSION_ID = "YOUR_EXTENSION_ID_HERE"; // User needs to provide this or we make it generic
-            // We'll try just sending a message if we don't have the ID, or assume the user will fill it.
-            // For now, let's just log it.
-            console.log('[Cinematic Voice] Attempting to sync session to extension via runtime.sendMessage');
-            try {
-                // Because we don't have the ID, we can't target it directly unless 'externally_connectable' matches this domain
-                // But usually you need the ID. 
-                // We'll simulate the "Store in chrome.storage.local" by sending a message.
-            } catch (e) {
-                console.log('[Cinematic Voice] Extension not found or error communicating', e);
+        // 2. Send to extension via postMessage (content script will listen and forward to chrome.storage.local)
+        window.postMessage({ 
+            type: 'CINEMATIC_VOICE_SESSION', 
+            session: {
+                access_token: session.access_token,
+                refresh_token: session.refresh_token,
+                expires_at: session.expires_at,
+                user: session.user
             }
-        }
-
-        // Method B: window.postMessage (Content script listener)
-        window.postMessage({ type: 'CINEMATIC_VOICE_SESSION', session }, '*');
-        console.log('[Cinematic Voice] Session stored for extension (via postMessage)');
+        }, '*');
+        
+        console.log('[Cinematic Voice] Session synced - access_token:', session.access_token?.substring(0, 20) + '...');
     };
 
     const loginWithGoogle = async (redirectUrl) => {

@@ -63,11 +63,28 @@ Deno.serve(async (req) => {
             userPlan = 'pro'
         }
 
-        // Log per requirements
-        console.log(`[EDGE] verifyUserPlan: ${user.id}, ${userPlan}`)
+        // 5. Get Today's Usage
+        const today = new Date().toISOString().split('T')[0]
+        const { data: usageData, error: usageError } = await supabaseAdmin
+            .from('usage_daily')
+            .select('normal_used, cinematic_used')
+            .eq('user_id', user.id)
+            .eq('date', today)
+            .maybeSingle()
 
-        // 5. Return result
-        return new Response(JSON.stringify({ userId: user.id, plan: userPlan }), {
+        const normalUsedToday = usageData?.normal_used ?? 0
+        const cinematicUsedToday = usageData?.cinematic_used ?? 0
+
+        // Log per requirements
+        console.log(`[EDGE] verifyUserPlan: ${user.id}, ${userPlan}, normal: ${normalUsedToday}, cinematic: ${cinematicUsedToday}`)
+
+        // 6. Return result
+        return new Response(JSON.stringify({ 
+            userId: user.id, 
+            plan: userPlan,
+            normal_used_today: normalUsedToday,
+            cinematic_used_today: cinematicUsedToday
+        }), {
             headers: { "Content-Type": "application/json" },
             status: 200,
         })
