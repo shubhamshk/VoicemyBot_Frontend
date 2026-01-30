@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 
 const ExtensionAuth = () => {
-    const { user, loginWithGoogle, loginWithDiscord, loading } = useAuth();
+    const { user, loginWithGoogle, loginWithDiscord, logout, loading } = useAuth();
 
     useEffect(() => {
         if (user) {
@@ -31,6 +31,15 @@ const ExtensionAuth = () => {
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
                 <div className="absolute top-[20%] left-[20%] w-[60%] h-[60%] bg-purple-900/20 blur-[150px] rounded-full" />
             </div>
+
+            {user && (
+                <button
+                    onClick={logout}
+                    className="absolute top-6 right-6 px-4 py-2 text-sm text-gray-400 hover:text-white border border-white/10 rounded-full hover:bg-white/5 transition-all"
+                >
+                    Logout
+                </button>
+            )}
 
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
