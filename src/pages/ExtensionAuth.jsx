@@ -1,91 +1,77 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 import { motion } from 'framer-motion';
 
 const ExtensionAuth = () => {
     const { user, loginWithGoogle, loginWithDiscord, logout, loading } = useAuth();
+    const [debugInfo, setDebugInfo] = useState([]);
+    const [sessionSent, setSessionSent] = useState(false);
+
+    const addDebug = (message) => {
+        console.log(message);
+        setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
+    };
 
     useEffect(() => {
+        // Get extension ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const extensionId = urlParams.get('extensionId');
+        
+        addDebug(`[Init] Extension ID: ${extensionId || 'MISSING!'}`);
+        addDebug(`[Init] Chrome available: ${typeof chrome !== 'undefined'}`);
+        addDebug(`[Init] Current URL: ${window.location.href}`);
+
         const syncSession = async () => {
-            // 1. Immediate check
             const { data } = await supabase.auth.getSession();
+            
             if (data?.session) {
-                console.log("[Cinematic Voice] Session found, syncing to extension...");
+                addDebug("[Session] ✓ Found Supabase session");
+                addDebug(`[Session] User: ${data.session.user?.email}`);
                 
-                // METHOD 1: Dispatch custom event for content script to catch
-                try {
-                    const event = new CustomEvent('CINEMATIC_AUTH_EVENT', {
-                        detail: { session: data.session }
-                    });
-                    window.dispatchEvent(event);
-                    console.log("[Cinematic Voice] ✓ Dispatched auth event to content script");
-                } catch (err) {
-                    console.error("[Cinematic Voice] Error dispatching event:", err);
-                }
-                
-                // METHOD 2: Store in localStorage for content script polling
+                // Store in localStorage
                 try {
                     localStorage.setItem('cinematicAuthSession', JSON.stringify({
                         session: data.session,
                         timestamp: Date.now()
                     }));
-                    console.log("[Cinematic Voice] ✓ Stored session in localStorage");
+                    addDebug("[LocalStorage] ✓ Stored session");
                 } catch (err) {
-                    console.error("[Cinematic Voice] Error storing in localStorage:", err);
+                    addDebug(`[LocalStorage] ✗ Error: ${err.message}`);
                 }
                 
-                // METHOD 3: Try direct chrome.runtime.sendMessage (if available)
-                const urlParams = new URLSearchParams(window.location.search);
-                const extensionId = urlParams.get('extensionId');
-                
-                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage && extensionId) {
-                    try {
-                        console.log("[Cinematic Voice] Attempting direct message to extension...");
-                        
-                        const messageData = {
-                            type: "CINEMATIC_AUTH_SUCCESS",
-                            session: data.session
-                        };
-                        
-                        chrome.runtime.sendMessage(
-                            extensionId,
-                            messageData,
-                            (response) => {
-                                if (chrome.runtime.lastError) {
-                                    console.warn("[Cinematic Voice] Direct message failed:", chrome.runtime.lastError.message);
-                                } else {
-                                    console.log("[Cinematic Voice] ✓ Direct message sent successfully:", response);
-                                }
-                            }
-                        );
-                    } catch (err) {
-                        console.warn("[Cinematic Voice] Direct messaging not available:", err);
-                    }
+                // Dispatch custom event
+                try {
+                    const event = new CustomEvent('CINEMATIC_AUTH_EVENT', {
+                        detail: { session: data.session }
+                    });
+                    window.dispatchEvent(event);
+                    addDebug("[CustomEvent] ✓ Dispatched CINEMATIC_AUTH_EVENT");
+                } catch (err) {
+                    addDebug(`[CustomEvent] ✗ Error: ${err.message}`);
                 }
+                
+                setSessionSent(true);
+                
+                // Give content script time to pick up the session
+                setTimeout(() => {
+                    addDebug("[Info] Session should be synced now. You can close this tab manually.");
+                }, 2000);
+            } else {
+                addDebug("[Session] No session found (user not logged in)");
             }
         };
 
+        // Check immediately
         syncSession();
 
-        // 2. Listen for auth state changes
+        // Listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log("[Cinematic Voice] Auth state changed:", event);
+            addDebug(`[AuthStateChange] Event: ${event}`);
             
             if (event === 'SIGNED_IN' && session) {
-                console.log("[Cinematic Voice] User signed in, syncing session...");
-                
-                // Dispatch event
-                try {
-                    const customEvent = new CustomEvent('CINEMATIC_AUTH_EVENT', {
-                        detail: { session: session }
-                    });
-                    window.dispatchEvent(customEvent);
-                    console.log("[Cinematic Voice] ✓ Dispatched auth event");
-                } catch (err) {
-                    console.error("[Cinematic Voice] Error dispatching event:", err);
-                }
+                addDebug(`[AuthStateChange] ✓ User signed in: ${session.user?.email}`);
                 
                 // Store in localStorage
                 try {
@@ -93,37 +79,27 @@ const ExtensionAuth = () => {
                         session: session,
                         timestamp: Date.now()
                     }));
-                    console.log("[Cinematic Voice] ✓ Stored in localStorage");
+                    addDebug("[LocalStorage] ✓ Stored session after sign-in");
                 } catch (err) {
-                    console.error("[Cinematic Voice] Error storing:", err);
+                    addDebug(`[LocalStorage] ✗ Error: ${err.message}`);
                 }
                 
-                // Try direct message
-                const urlParams = new URLSearchParams(window.location.search);
-                const extensionId = urlParams.get('extensionId');
-                
-                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage && extensionId) {
-                    try {
-                        const messageData = {
-                            type: "CINEMATIC_AUTH_SUCCESS",
-                            session: session
-                        };
-                        
-                        chrome.runtime.sendMessage(
-                            extensionId,
-                            messageData,
-                            (response) => {
-                                if (chrome.runtime.lastError) {
-                                    console.warn("[Cinematic Voice] Direct message failed:", chrome.runtime.lastError.message);
-                                } else {
-                                    console.log("[Cinematic Voice] ✓ Direct message sent:", response);
-                                }
-                            }
-                        );
-                    } catch (err) {
-                        console.warn("[Cinematic Voice] Direct messaging not available:", err);
-                    }
+                // Dispatch custom event
+                try {
+                    const customEvent = new CustomEvent('CINEMATIC_AUTH_EVENT', {
+                        detail: { session: session }
+                    });
+                    window.dispatchEvent(customEvent);
+                    addDebug("[CustomEvent] ✓ Dispatched CINEMATIC_AUTH_EVENT");
+                } catch (err) {
+                    addDebug(`[CustomEvent] ✗ Error: ${err.message}`);
                 }
+                
+                setSessionSent(true);
+                
+                setTimeout(() => {
+                    addDebug("[Info] ✓ Authentication complete! Close this tab and check your extension.");
+                }, 2000);
             }
         });
 
@@ -175,11 +151,30 @@ const ExtensionAuth = () => {
                         <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-500/50">
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                         </div>
-                        <h1 className="text-2xl font-bold mb-2">Authenticated</h1>
-                        <p className="text-gray-400 mb-8 leading-relaxed">You've logged in successfully. You can now safeley return to the extension.</p>
-                        <button className="px-6 py-4 rounded-xl bg-white/10 hover:bg-white/20 transition-all font-bold w-full border border-white/10" onClick={() => window.close()}>
-                            Close & Return
-                        </button>
+                        <h1 className="text-2xl font-bold mb-2">✓ Authenticated</h1>
+                        <p className="text-gray-400 mb-4 leading-relaxed">
+                            {sessionSent 
+                                ? "Your session has been sent to the extension. You can close this tab now."
+                                : "Syncing your session to the extension..."
+                            }
+                        </p>
+                        
+                        {/* Debug console */}
+                        <div className="mt-6 mb-4 p-4 bg-black/30 rounded-lg text-left max-h-48 overflow-y-auto">
+                            <div className="text-xs font-mono text-green-400 space-y-1">
+                                {debugInfo.length === 0 ? (
+                                    <div className="text-gray-500">Initializing...</div>
+                                ) : (
+                                    debugInfo.map((msg, i) => (
+                                        <div key={i} className="whitespace-pre-wrap break-all">{msg}</div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="text-sm text-gray-500 mb-4">
+                            Close this tab manually and open your extension
+                        </div>
                     </>
                 ) : (
                     <>
