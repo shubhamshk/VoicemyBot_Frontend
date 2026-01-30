@@ -10,6 +10,28 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [session, setSession] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [userProfile, setUserProfile] = useState(null);
+
+    const fetchUserProfile = async (userId) => {
+        try {
+            // Check for daily reset
+            await supabase.rpc('check_and_reset_usage');
+
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (data) {
+                setUserProfile(data);
+            } else if (error) {
+                console.error('Error fetching profile:', error);
+            }
+        } catch (e) {
+            console.error('Profile fetch error:', e);
+        }
+    };
 
     useEffect(() => {
         // Check active session
@@ -18,6 +40,7 @@ export const AuthProvider = ({ children }) => {
             setUser(session?.user ?? null);
             if (session) {
                 syncSessionToExtension(session);
+                fetchUserProfile(session.user.id);
             }
             setLoading(false);
         });
@@ -28,7 +51,9 @@ export const AuthProvider = ({ children }) => {
             setUser(session?.user ?? null);
             if (session) {
                 syncSessionToExtension(session);
+                fetchUserProfile(session.user.id);
             } else {
+                setUserProfile(null);
                 // Handle logout cleanup if needed
                 localStorage.removeItem('sb-session'); // Cleanup local if desired
             }
@@ -96,6 +121,8 @@ export const AuthProvider = ({ children }) => {
     const value = {
         user,
         session,
+        userProfile,
+        refreshProfile: () => user && fetchUserProfile(user.id),
         loginWithGoogle,
         loginWithDiscord,
         logout,

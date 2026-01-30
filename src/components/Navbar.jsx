@@ -25,7 +25,13 @@ const Navbar = () => {
                     </Link>
 
                     <div className="hidden md:flex items-center gap-8">
-                        {['Features', 'Demo', 'Pricing', 'Community'].map((item) => (
+                        <Link
+                            to="/pricing"
+                            className="text-white/70 hover:text-cyan-400 transition-colors text-sm font-medium tracking-wide"
+                        >
+                            Pricing
+                        </Link>
+                        {['Features', 'Demo', 'Community'].map((item) => (
                             <a
                                 key={item}
                                 href={`/#${item.toLowerCase()}`}

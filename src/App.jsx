@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import ExtensionAuth from './pages/ExtensionAuth';
+import Pricing from './pages/Pricing';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -44,8 +45,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Layout><Landing /></Layout>} />
-      <Route path="/features" element={<Layout><Landing /></Layout>} /> {/* Placeholder - routing to landing for now */}
-      <Route path="/pricing" element={<Layout><Landing /></Layout>} /> {/* Placeholder - routing to landing for now */}
+      <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
 
       <Route path="/dashboard" element={
         <ProtectedRoute>
