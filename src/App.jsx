@@ -1,0 +1,76 @@
+
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Landing from './pages/Landing';
+import Dashboard from './pages/Dashboard';
+import ExtensionAuth from './pages/ExtensionAuth';
+
+// Protected Route Wrapper
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div className="min-h-screen bg-black" />;
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
+// Layout Wrapper (Navbar + Page + Footer)
+const Layout = ({ children }) => {
+  return (
+    <div className="min-h-screen bg-deep-black text-white selection:bg-neon-blue/30 selection:text-white">
+      <Navbar />
+      {children}
+      <Footer />
+    </div>
+  );
+};
+
+const LayoutNoFooter = ({ children }) => {
+  return (
+    <div className="min-h-screen bg-deep-black text-white selection:bg-neon-blue/30 selection:text-white">
+      <Navbar />
+      {children}
+    </div>
+  );
+};
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Layout><Landing /></Layout>} />
+      <Route path="/features" element={<Layout><Landing /></Layout>} /> {/* Placeholder - routing to landing for now */}
+      <Route path="/pricing" element={<Layout><Landing /></Layout>} /> {/* Placeholder - routing to landing for now */}
+
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <LayoutNoFooter>
+            <Dashboard />
+          </LayoutNoFooter>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/extension-auth" element={<ExtensionAuth />} />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;
