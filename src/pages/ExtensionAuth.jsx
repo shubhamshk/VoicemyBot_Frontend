@@ -1,22 +1,42 @@
 
 import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabaseClient';
 import { motion } from 'framer-motion';
 
 const ExtensionAuth = () => {
     const { user, loginWithGoogle, loginWithDiscord, logout, loading } = useAuth();
 
     useEffect(() => {
-        if (user) {
-            // 1. Save session to localStorage (Supabase does this but we ensure it matches extension expectation)
-            // The AuthContext already handles syncing to extension conceptually, 
-            // but we need to explicitly send the "Handshake Success" message to the opener window here.
-
-            if (window.opener) {
-                window.opener.postMessage({ type: "CINEMATIC_AUTH_SUCCESS" }, "*")
+        const syncSession = async () => {
+            // 1. Immediate check
+            const { data } = await supabase.auth.getSession();
+            if (data?.session && window.opener) {
+                console.log("[Cinematic Voice] Sending session to extension (onMount)...");
+                window.opener.postMessage({
+                    type: "CINEMATIC_AUTH_SUCCESS",
+                    session: data.session
+                }, "*");
             }
-        }
-    }, [user]);
+        };
+
+        syncSession();
+
+        // 2. Listen for auth state changes just in case
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (session && window.opener) {
+                console.log("[Cinematic Voice] Sending session to extension (onAuthStateChange)...");
+                window.opener.postMessage({
+                    type: "CINEMATIC_AUTH_SUCCESS",
+                    session: session
+                }, "*");
+            }
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, []);
 
     if (loading) {
         return (
