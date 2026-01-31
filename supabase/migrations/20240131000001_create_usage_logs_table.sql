@@ -25,12 +25,14 @@ ON usage_logs(created_at);
 ALTER TABLE usage_logs ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can only view their own usage logs
+DROP POLICY IF EXISTS "Users can view own usage logs" ON usage_logs;
 CREATE POLICY "Users can view own usage logs"
 ON usage_logs
 FOR SELECT
 USING (auth.uid() = user_id);
 
 -- Policy: Only the backend (service role) can insert usage logs
+DROP POLICY IF EXISTS "Only backend can insert usage logs" ON usage_logs;
 CREATE POLICY "Only backend can insert usage logs"
 ON usage_logs
 FOR INSERT
