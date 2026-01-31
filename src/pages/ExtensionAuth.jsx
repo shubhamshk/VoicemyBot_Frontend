@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
@@ -27,6 +26,7 @@ const ExtensionAuth = () => {
             const { data } = await supabase.auth.getSession();
             
             if (data?.session) {
+                console.log(data.session.access_token); // Log the JWT token
                 addDebug("[Session] ✓ Found Supabase session");
                 addDebug(`[Session] User: ${data.session.user?.email}`);
                 

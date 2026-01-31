@@ -64,6 +64,7 @@ const Pricing = () => {
         // Determine Plan ID based on type and cycle
         let planId = null;
         if (type === 'pro') {
+            console.log("Plan ID:", import.meta.env.VITE_PAYPAL_PLAN_ID_PRO_MONTHLY); // Debug log
             planId = billingCycle === 'yearly'
                 ? import.meta.env.VITE_PAYPAL_PLAN_ID_PRO_YEARLY
                 : import.meta.env.VITE_PAYPAL_PLAN_ID_PRO_MONTHLY;

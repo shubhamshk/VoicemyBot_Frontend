@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
@@ -36,6 +35,7 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         // Check active session
         supabase.auth.getSession().then(({ data: { session } }) => {
+            console.log(session.access_token); // Log the JWT token
             setSession(session);
             setUser(session?.user ?? null);
             if (session) {
