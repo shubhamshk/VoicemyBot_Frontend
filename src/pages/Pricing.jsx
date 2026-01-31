@@ -118,9 +118,20 @@ const Pricing = () => {
                             <PayPalButtons
                                 style={{ layout: "horizontal", height: 48, tagline: false, shape: 'pill', label: 'subscribe' }}
                                 createSubscription={(data, actions) => {
-                                    if (!planId || planId.includes('PLACEHOLDER') || planId.includes('XXXXX') || planId.includes('YYYYY') || planId.includes('UUUUU')) {
-                                        alert("PayPal Plan ID is missing in configuration. Please check your .env file.");
-                                        throw new Error("Plan ID missing");
+                                    const isInvalid = !planId ||
+                                        planId.includes('PLACEHOLDER') ||
+                                        planId.includes('XXXXX') ||
+                                        planId.includes('YYYYY') ||
+                                        planId.includes('UUUUU') ||
+                                        planId.includes('TEST') ||
+                                        planId.length < 10;
+
+                                    if (isInvalid) {
+                                        const msg = `CRITICAL: Invalid PayPal Plan ID: "${planId}".\n\n` +
+                                            "PayPal strictly requires a real Plan ID (usually starting with P- followed by ~20 characters).\n\n" +
+                                            "Please create a real plan in your PayPal Dashboard and update your .env file.";
+                                        alert(msg);
+                                        throw new Error("Invalid Plan ID format");
                                     }
                                     return actions.subscription.create({
                                         plan_id: planId,
