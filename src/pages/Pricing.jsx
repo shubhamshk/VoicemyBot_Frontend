@@ -80,8 +80,8 @@ const Pricing = () => {
         return (
             <div
                 className={`relative p-8 rounded-2xl backdrop-blur-xl border transition-all duration-300 flex flex-col h-full group ${recommended
-                        ? 'border-purple-500/50 bg-purple-900/10 hover:border-purple-400 hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]'
-                        : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                    ? 'border-purple-500/50 bg-purple-900/10 hover:border-purple-400 hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]'
+                    : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
                     }`}
             >
                 {/* Glow Effect on Hover */}
@@ -122,10 +122,18 @@ const Pricing = () => {
                             Included
                         </button>
                     ) : (
-                        <div className="relative w-full min-h-[48px] flex items-center justify-center">
+                        <div className="relative w-full flex items-center justify-center pt-4">
                             <PayPalButtons
-                                className="w-full"
-                                style={{ layout: "horizontal", height: 48, tagline: false, shape: 'pill', label: 'subscribe', color: 'blue' }}
+                                className="w-full relative z-10"
+                                forceReRender={[billingCycle, type]}
+                                style={{
+                                    layout: "horizontal",
+                                    height: 48,
+                                    tagline: false,
+                                    shape: 'pill',
+                                    label: 'paypal', // 'paypal' label gives the cleanest logo-only look 
+                                    color: 'gold'
+                                }}
                                 createSubscription={(data, actions) => {
                                     const isInvalid = !planId ||
                                         planId.includes('PLACEHOLDER') ||
