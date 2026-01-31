@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const Footer = () => {
     return (
         <footer className="py-12 border-t border-white/5 relative z-10 bg-black">
@@ -9,7 +11,7 @@ const Footer = () => {
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-8 text-sm text-white/50">
-                    <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+                    <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
                     <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
                     <a href="#" className="hover:text-white transition-colors">Twitter</a>
                     <a href="#" className="hover:text-white transition-colors">Discord</a>

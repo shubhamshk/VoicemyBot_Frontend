@@ -217,7 +217,7 @@ const Pricing = () => {
                         {/* PRO PLAN */}
                         <PricingCard
                             title="Pro"
-                            price={billingCycle === 'yearly' ? '$59' : '$9'}
+                            price={billingCycle === 'yearly' ? '$49' : '$9'}
                             type="pro"
                             recommended={true}
                             features={[

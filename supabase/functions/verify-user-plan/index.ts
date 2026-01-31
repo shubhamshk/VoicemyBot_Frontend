@@ -139,31 +139,18 @@ Deno.serve(async (req) => {
             userPlan = 'pro';
         }
 
-        // 5. Get Today's Usage (NEW SYSTEM: Count from usage_logs)
+        // 5. Get Today's Usage from usage_daily table
         const today = new Date().toISOString().split('T')[0];
-        const todayStart = new Date(today + 'T00:00:00Z').toISOString();
-        const todayEnd = new Date(today + 'T23:59:59Z').toISOString();
 
-        // Count normal usage
-        const { count: normalCount } = await supabaseAdmin
-            .from('usage_logs')
-            .select('*', { count: 'exact', head: true })
+        const { data: usageData } = await supabaseAdmin
+            .from('usage_daily')
+            .select('normal_used, cinematic_used')
             .eq('user_id', user.id)
-            .eq('mode', 'normal')
-            .gte('created_at', todayStart)
-            .lte('created_at', todayEnd);
+            .eq('date', today)
+            .single();
 
-        // Count cinematic usage
-        const { count: cinematicCount } = await supabaseAdmin
-            .from('usage_logs')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('mode', 'cinematic')
-            .gte('created_at', todayStart)
-            .lte('created_at', todayEnd);
-
-        const normalUsedToday = normalCount ?? 0;
-        const cinematicUsedToday = cinematicCount ?? 0;
+        const normalUsedToday = usageData?.normal_used ?? 0;
+        const cinematicUsedToday = usageData?.cinematic_used ?? 0;
 
         // Log per requirements
         console.log(`[EDGE] verifyUserPlan: ${user.id}, ${userPlan}, normal: ${normalUsedToday}, cinematic: ${cinematicUsedToday}`);

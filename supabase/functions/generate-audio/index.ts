@@ -47,22 +47,40 @@ Deno.serve(async (req) => {
         // ================================================
         // STEP 1: AUTH - Verify JWT and Extract userId
         // ================================================
-        const authHeader = req.headers.get('Authorization')
-        if (!authHeader) {
-            return jsonResponse({ error: 'No authorization header' }, 401)
+        const authHeader = req.headers.get('Authorization') || req.headers.get('authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            console.error('[EDGE] Missing or invalid authorization header');
+            return jsonResponse({ error: 'No authorization header' }, 401);
         }
 
-        // Create Supabase client with user context using PRIVATE_SERVICE_ROLE_KEY
-        const supabaseClient = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('PRIVATE_SERVICE_ROLE_KEY') ?? '',
-            { global: { headers: { Authorization: authHeader } } }
-        )
+        const jwt = authHeader.replace('Bearer ', '');
 
-        const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+        // Create Supabase client using PRIVATE_SERVICE_ROLE_KEY
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+        const supabaseServiceKey = Deno.env.get('PRIVATE_SERVICE_ROLE_KEY') ?? '';
+
+        if (!supabaseUrl || !supabaseServiceKey) {
+            console.error('[EDGE] Missing environment variables');
+            return jsonResponse({ error: 'Server configuration error' }, 500);
+        }
+
+        const supabaseAdmin = createClient(
+            supabaseUrl,
+            supabaseServiceKey,
+            {
+                auth: {
+                    autoRefreshToken: false,
+                    persistSession: false
+                }
+            }
+        );
+
+        // Validate JWT explicitly
+        const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(jwt);
+
         if (userError || !user) {
-            console.error('[AUTH FAILED]', userError)
-            return jsonResponse({ error: 'Unauthorized' }, 401)
+            console.error('[AUTH FAILED]', userError?.message);
+            return jsonResponse({ error: 'Unauthorized', details: userError?.message }, 401);
         }
 
         console.log(`[AUTH SUCCESS] User: ${user.id}`)
@@ -95,13 +113,9 @@ Deno.serve(async (req) => {
         console.log(`[REQUEST] mode=${mode}, provider=${provider}, text_length=${text.length}`)
 
         // ================================================
-        // ================================================
         // STEP 3: PLAN CHECK - Get User Plan
         // ================================================
-        const supabaseAdmin = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('PRIVATE_SERVICE_ROLE_KEY') ?? ''
-        )
+        // (Using supabaseAdmin already created in Step 1)
 
         const { data: userData, error: planError } = await supabaseAdmin
             .from('users')
@@ -125,42 +139,24 @@ Deno.serve(async (req) => {
         console.log(`[PLAN] ${userPlan}`)
 
         // ================================================
-        // STEP 4: USAGE COUNT - Count Today's Usage
+        // STEP 4: USAGE COUNT - Read from usage_daily table
         // ================================================
-        const today = new Date().toISOString().split('T')[0] // YYYY-MM-DD
-        const todayStart = new Date(today + 'T00:00:00Z').toISOString()
-        const todayEnd = new Date(today + 'T23:59:59Z').toISOString()
+        const today = new Date().toISOString().split('T')[0];
 
-        // Count normal usage today
-        const { count: normalCount, error: normalError } = await supabaseAdmin
-            .from('usage_logs')
-            .select('*', { count: 'exact', head: true })
+        const { data: usageData, error: usageError } = await supabaseAdmin
+            .from('usage_daily')
+            .select('normal_used, cinematic_used')
             .eq('user_id', user.id)
-            .eq('mode', 'normal')
-            .gte('created_at', todayStart)
-            .lte('created_at', todayEnd)
+            .eq('date', today)
+            .single();
 
-        if (normalError) {
-            console.error('[USAGE COUNT ERROR]', normalError)
-            return jsonResponse({ error: 'Failed to count usage' }, 500)
+        if (usageError && usageError.code !== 'PGRST116') { // PGRST116 means "no rows found" which is expected for new days
+            console.error('[USAGE COUNT ERROR]', usageError);
+            return jsonResponse({ error: 'Failed to count usage' }, 500);
         }
 
-        // Count cinematic usage today
-        const { count: cinematicCount, error: cinematicError } = await supabaseAdmin
-            .from('usage_logs')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('mode', 'cinematic')
-            .gte('created_at', todayStart)
-            .lte('created_at', todayEnd)
-
-        if (cinematicError) {
-            console.error('[USAGE COUNT ERROR]', cinematicError)
-            return jsonResponse({ error: 'Failed to count usage' }, 500)
-        }
-
-        const normalUsedToday = normalCount ?? 0
-        const cinematicUsedToday = cinematicCount ?? 0
+        const normalUsedToday = usageData?.normal_used ?? 0;
+        const cinematicUsedToday = usageData?.cinematic_used ?? 0;
 
         console.log(`[USAGE] normal=${normalUsedToday}, cinematic=${cinematicUsedToday}`)
 
@@ -287,30 +283,16 @@ Deno.serve(async (req) => {
         }
 
         // ================================================
-        // STEP 7: LOG USAGE - Record in Database
+        // STEP 7: LOG USAGE - REMOVED (Handled by increment-usage endpoint)
         // ================================================
-        const { error: logError } = await supabaseAdmin
-            .from('usage_logs')
-            .insert({
-                user_id: user.id,
-                mode: mode,
-                created_at: new Date().toISOString()
-            })
-
-        if (logError) {
-            console.error('[USAGE LOG ERROR]', logError)
-            // Don't fail the request, but log the error
-        } else {
-            console.log(`[USAGE LOGGED] ${user.id}, ${mode}`)
-        }
 
         // ================================================
         // STEP 8: RETURN AUDIO & HEADERS
         // ================================================
 
-        // Calculate final counts to return to client
-        const finalNormal = mode === 'normal' ? normalUsedToday + 1 : normalUsedToday
-        const finalCinematic = mode === 'cinematic' ? cinematicUsedToday + 1 : cinematicUsedToday
+        // Use database values directly (they were already incremented by increment-usage endpoint)
+        const finalNormal = normalUsedToday;
+        const finalCinematic = cinematicUsedToday;
 
         const usageHeaders = {
             'X-Usage-Normal': String(finalNormal),
