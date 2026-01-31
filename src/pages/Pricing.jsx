@@ -116,7 +116,7 @@ const Pricing = () => {
                         <div className="z-10 relative">
                             {/* PayPal Button Container */}
                             <PayPalButtons
-                                style={{ layout: "horizontal", height: 48, tagline: false, shape: 'pill', label: 'subscribe' }}
+                                style={{ layout: "horizontal", height: 48, tagline: false, shape: 'pill', label: 'subscribe', color: 'blue' }}
                                 createSubscription={(data, actions) => {
                                     const isInvalid = !planId ||
                                         planId.includes('PLACEHOLDER') ||
@@ -228,7 +228,7 @@ const Pricing = () => {
                         {/* ULTRA ADDON */}
                         <PricingCard
                             title="Ultra Premium"
-                            price={billingCycle === 'yearly' ? '$199' : '$199'}
+                            price={billingCycle === 'yearly' ? '$399' : '$59'}
                             // Ultra is strictly Yearly based on prompt "$199/year (separate from Pro)"
                             // Prompt says "Ultra Premium ($1.99/year)" in payments section but "Plan 3.. $199" in text.
                             // I'll assume it's yearly only.

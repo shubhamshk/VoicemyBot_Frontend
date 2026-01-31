@@ -59,36 +59,33 @@ Deno.serve(async (req) => {
             }, 401);
         }
 
-        // 2. Extract JWT from Bearer token
-        const jwt = authHeader.replace('Bearer ', '');
-        console.log('[DEBUG] JWT extracted, length:', jwt.length);
-
-        // 3. Create Supabase ADMIN client with SERVICE_ROLE_KEY for JWT validation
+        // 2. Create Supabase client - MUST pass Authorization header from request
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
-        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
-        console.log('[DEBUG] SUPABASE_URL present:', !!supabaseUrl);
-        console.log('[DEBUG] SUPABASE_SERVICE_ROLE_KEY present:', !!supabaseServiceKey);
+        console.log('[EDGE] SUPABASE_URL present:', !!supabaseUrl);
+        console.log('[EDGE] SUPABASE_ANON_KEY present:', !!supabaseAnonKey);
 
-        if (!supabaseUrl || !supabaseServiceKey) {
+        if (!supabaseUrl || !supabaseAnonKey) {
             console.error('[EDGE] Missing required environment variables');
             return jsonResponse({ error: 'Server configuration error' }, 500);
         }
 
-        const supabaseAdmin = createClient(
+        const supabaseClient = createClient(
             supabaseUrl,
-            supabaseServiceKey,
+            supabaseAnonKey,
             {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false
+                global: {
+                    headers: {
+                        Authorization: authHeader
+                    }
                 }
             }
         );
 
-        // 4. Validate JWT by passing it directly to getUser()
-        console.log('[DEBUG] Validating JWT with admin client...');
-        const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(jwt);
+        // 3. Get User - this validates the token
+        console.log('[DEBUG] Validating user token...');
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
 
         if (userError) {
             console.error('[DEBUG] Token validation error:', userError.message);
@@ -115,9 +112,14 @@ Deno.serve(async (req) => {
             return jsonResponse({ error: 'No user found' }, 401);
         }
 
-        console.log('[DEBUG] JWT validation successful! User ID:', user?.id);
+        console.log('[DEBUG] User validation successful:', user?.id);
 
-        // 5. Query Plan from DB (reuse supabaseAdmin client)
+        // 4. Query Plan from DB using Admin Client (Service Role)
+        const supabaseAdmin = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+
         const { data: userData, error: planError } = await supabaseAdmin
             .from('users')
             .select('plan, ultra_premium')
@@ -137,19 +139,31 @@ Deno.serve(async (req) => {
             userPlan = 'pro';
         }
 
-        // 6. Get Today's Usage from usage_daily table
+        // 5. Get Today's Usage (NEW SYSTEM: Count from usage_logs)
         const today = new Date().toISOString().split('T')[0];
+        const todayStart = new Date(today + 'T00:00:00Z').toISOString();
+        const todayEnd = new Date(today + 'T23:59:59Z').toISOString();
 
-        // Query usage_daily table for today's usage
-        const { data: usageData } = await supabaseAdmin
-            .from('usage_daily')
-            .select('normal_used, cinematic_used')
+        // Count normal usage
+        const { count: normalCount } = await supabaseAdmin
+            .from('usage_logs')
+            .select('*', { count: 'exact', head: true })
             .eq('user_id', user.id)
-            .eq('date', today)
-            .single();
+            .eq('mode', 'normal')
+            .gte('created_at', todayStart)
+            .lte('created_at', todayEnd);
 
-        const normalUsedToday = usageData?.normal_used ?? 0;
-        const cinematicUsedToday = usageData?.cinematic_used ?? 0;
+        // Count cinematic usage
+        const { count: cinematicCount } = await supabaseAdmin
+            .from('usage_logs')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('mode', 'cinematic')
+            .gte('created_at', todayStart)
+            .lte('created_at', todayEnd);
+
+        const normalUsedToday = normalCount ?? 0;
+        const cinematicUsedToday = cinematicCount ?? 0;
 
         // Log per requirements
         console.log(`[EDGE] verifyUserPlan: ${user.id}, ${userPlan}, normal: ${normalUsedToday}, cinematic: ${cinematicUsedToday}`);
