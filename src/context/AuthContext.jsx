@@ -13,22 +13,48 @@ export const AuthProvider = ({ children }) => {
 
     const fetchUserProfile = async (userId) => {
         try {
-            // Check for daily reset
-            await supabase.rpc('check_and_reset_usage');
-
-            const { data, error } = await supabase
+            // 1. Try to fetch the profile
+            const { data, error: fetchError } = await supabase
                 .from('users')
                 .select('*')
                 .eq('id', userId)
-                .single();
+                .maybeSingle();
 
             if (data) {
                 setUserProfile(data);
-            } else if (error) {
-                console.error('Error fetching profile:', error);
+                return;
+            }
+
+            // 2. If profile doesn't exist, create it (likely a first-time login)
+            if (!data) {
+                console.log('[Auth] Profile not found, creating for new user:', userId);
+
+                const { data: { user: currentUser } } = await supabase.auth.getUser();
+                if (!currentUser) return;
+
+                const newProfile = {
+                    id: userId,
+                    email: currentUser.email,
+                    name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'User',
+                    avatar_url: currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || '',
+                    plan: 'free'
+                };
+
+                const { data: createdData, error: insertError } = await supabase
+                    .from('users')
+                    .insert(newProfile)
+                    .select()
+                    .single();
+
+                if (insertError) {
+                    console.error('[Auth] Error creating profile:', insertError);
+                } else {
+                    console.log('[Auth] Profile created successfully');
+                    setUserProfile(createdData);
+                }
             }
         } catch (e) {
-            console.error('Profile fetch error:', e);
+            console.error('Profile process error:', e);
         }
     };
 
@@ -68,8 +94,8 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('cinematic_session', JSON.stringify(session));
 
         // 2. Send to extension via postMessage (content script will listen and forward to chrome.storage.local)
-        window.postMessage({ 
-            type: 'CINEMATIC_VOICE_SESSION', 
+        window.postMessage({
+            type: 'CINEMATIC_VOICE_SESSION',
             session: {
                 access_token: session.access_token,
                 refresh_token: session.refresh_token,
@@ -77,7 +103,7 @@ export const AuthProvider = ({ children }) => {
                 user: session.user
             }
         }, '*');
-        
+
         console.log('[Cinematic Voice] Session synced - access_token:', session.access_token?.substring(0, 20) + '...');
     };
 
