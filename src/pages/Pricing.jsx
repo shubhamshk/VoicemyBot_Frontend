@@ -20,12 +20,15 @@ const Pricing = () => {
     const isPro = userProfile?.plan === 'pro';
     const isUltra = userProfile?.ultra_premium;
 
-    // PayPal Client ID from env
+    // PayPal Configuration
+    const isSandbox = (import.meta.env.VITE_PAYPAL_CLIENT_ID || "").includes("sb-") ||
+        (import.meta.env.VITE_PAYPAL_CLIENT_ID || "").length < 50;
+
     const initialOptions = {
-        "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "sb", // fallback to sandbox
+        "client-id": import.meta.env.VITE_PAYPAL_CLIENT_ID || "sb",
         currency: "USD",
         intent: "subscription",
-        vault: true,
+        vault: true, // Crucial for subscriptions
     };
 
     const handleApprove = async (data, actions, planType, priceMethod) => {
@@ -113,8 +116,7 @@ const Pricing = () => {
                             Included
                         </button>
                     ) : (
-                        <div className="z-10 relative">
-                            {/* PayPal Button Container */}
+                        <div className="z-10 relative bg-transparent rounded-lg overflow-hidden">
                             <PayPalButtons
                                 style={{ layout: "horizontal", height: 48, tagline: false, shape: 'pill', label: 'subscribe', color: 'blue' }}
                                 createSubscription={(data, actions) => {

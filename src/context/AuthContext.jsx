@@ -61,10 +61,10 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         // Check active session
         supabase.auth.getSession().then(({ data: { session } }) => {
-            console.log(session.access_token); // Log the JWT token
-            setSession(session);
-            setUser(session?.user ?? null);
             if (session) {
+                console.log("[Auth] Active session found, synchronizing...");
+                setSession(session);
+                setUser(session.user);
                 syncSessionToExtension(session);
                 fetchUserProfile(session.user.id);
             }

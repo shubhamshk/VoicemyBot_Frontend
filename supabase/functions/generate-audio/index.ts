@@ -2,8 +2,8 @@ import { createClient } from "@supabase/supabase-js"
 
 console.log("🎙️ Generate Audio Function initialized!")
 
-// Helper function to create response with CORS headers
-function jsonResponse(data: any, status = 200) {
+// Helper to create response with CORS headers and optional extra headers
+function jsonResponse(data: any, status = 200, extraHeaders = {}) {
     return new Response(JSON.stringify(data), {
         status,
         headers: {
@@ -11,6 +11,7 @@ function jsonResponse(data: any, status = 200) {
             'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
             'Access-Control-Allow-Methods': 'POST, OPTIONS',
             'Content-Type': 'application/json',
+            ...extraHeaders
         },
     })
 }
@@ -51,10 +52,10 @@ Deno.serve(async (req) => {
             return jsonResponse({ error: 'No authorization header' }, 401)
         }
 
-        // Create Supabase client with user context
+        // Create Supabase client with user context using PRIVATE_SERVICE_ROLE_KEY
         const supabaseClient = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+            Deno.env.get('PRIVATE_SERVICE_ROLE_KEY') ?? '',
             { global: { headers: { Authorization: authHeader } } }
         )
 
@@ -94,11 +95,12 @@ Deno.serve(async (req) => {
         console.log(`[REQUEST] mode=${mode}, provider=${provider}, text_length=${text.length}`)
 
         // ================================================
+        // ================================================
         // STEP 3: PLAN CHECK - Get User Plan
         // ================================================
         const supabaseAdmin = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+            Deno.env.get('PRIVATE_SERVICE_ROLE_KEY') ?? ''
         )
 
         const { data: userData, error: planError } = await supabaseAdmin
@@ -347,16 +349,3 @@ Deno.serve(async (req) => {
     }
 })
 
-// Helper to create response with CORS headers and optional extra headers
-function jsonResponse(data: any, status = 200, extraHeaders = {}) {
-    return new Response(JSON.stringify(data), {
-        status,
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Content-Type': 'application/json',
-            ...extraHeaders
-        },
-    })
-}

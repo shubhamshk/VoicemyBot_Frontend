@@ -61,19 +61,19 @@ Deno.serve(async (req) => {
 
         // 2. Create Supabase client - MUST pass Authorization header from request
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
-        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+        const supabaseServiceKey = Deno.env.get('PRIVATE_SERVICE_ROLE_KEY'); // ✅ FIXED: Changed name to avoid reserved prefix
 
         console.log('[EDGE] SUPABASE_URL present:', !!supabaseUrl);
-        console.log('[EDGE] SUPABASE_ANON_KEY present:', !!supabaseAnonKey);
+        console.log('[EDGE] PRIVATE_SERVICE_ROLE_KEY present:', !!supabaseServiceKey);
 
-        if (!supabaseUrl || !supabaseAnonKey) {
+        if (!supabaseUrl || !supabaseServiceKey) {
             console.error('[EDGE] Missing required environment variables');
-            return jsonResponse({ error: 'Server configuration error' }, 500);
+            return jsonResponse({ error: 'Server configuration error: Missing PRIVATE_SERVICE_ROLE_KEY' }, 500);
         }
 
         const supabaseClient = createClient(
             supabaseUrl,
-            supabaseAnonKey,
+            supabaseServiceKey,
             {
                 global: {
                     headers: {
@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
         // 4. Query Plan from DB using Admin Client (Service Role)
         const supabaseAdmin = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+            Deno.env.get('PRIVATE_SERVICE_ROLE_KEY') ?? ''
         );
 
         const { data: userData, error: planError } = await supabaseAdmin

@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
         const jwt = authHeader.replace('Bearer ', '');
 
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
-        const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        const supabaseServiceKey = Deno.env.get('PRIVATE_SERVICE_ROLE_KEY');
 
         if (!supabaseUrl || !supabaseServiceKey) {
             console.error('[EDGE] Missing environment variables');

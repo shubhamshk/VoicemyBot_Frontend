@@ -1,0 +1,23 @@
+🚀 Starting PayPal Plan Creation...
+
+📝 Getting PayPal access token...
+✅ Access token obtained
+
+📦 Creating product...
+✅ Product created: PROD-68S78039YW4248729
+
+💳 Creating subscription plans...
+
+✅ Plan created: P-3UH43008AM231851ANF676EQ - Pro Monthly
+✅ Plan created: P-2LC53591UV937772FNF676EQ - Pro Yearly
+✅ Plan created: P-6LG65661CH815683VNF676EQ - Ultra Premium Yearly
+
+✅ All plans created successfully!
+
+📋 Copy these Plan IDs to your .env file:
+
+VITE_PAYPAL_PLAN_ID_PRO_MONTHLY="P-3UH43008AM231851ANF676EQ"
+VITE_PAYPAL_PLAN_ID_PRO_YEARLY="P-2LC53591UV937772FNF676EQ"
+VITE_PAYPAL_PLAN_ID_ULTRA_YEARLY="P-6LG65661CH815683VNF676EQ"
+
+🎉 Done! Update your .env file and restart your dev server.

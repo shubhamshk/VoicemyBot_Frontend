@@ -25,10 +25,11 @@ Deno.serve(async (req) => {
 
     console.log(`[EDGE] Activate Plan Request: userId=${userId}, planType=${planType}, subscriptionId=${subscriptionId}`);
 
-    // Create a Supabase admin client with Service Role Key
+    // Create a 
+    //  admin client with Service Role Key
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      Deno.env.get('PRIVATE_SERVICE_ROLE_KEY') ?? '',
       {
         auth: {
           autoRefreshToken: false,
