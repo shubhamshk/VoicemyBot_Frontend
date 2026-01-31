@@ -48,11 +48,17 @@ const Hero = () => {
                     transition={{ duration: 0.8, delay: 0.6 }}
                     className="flex flex-col md:flex-row items-center justify-center gap-6"
                 >
-                    <button className="btn-primary w-full md:w-auto px-8 py-4 rounded-full text-lg font-bold tracking-wide shadow-[0_0_30px_rgba(188,19,254,0.3)] hover:shadow-[0_0_50px_rgba(0,243,255,0.4)] transition-shadow">
-                        Get Chrome Extension
+                    <button
+                        onClick={() => document.getElementById('waitlist-section')?.scrollIntoView({ behavior: 'smooth' })}
+                        className="btn-primary w-full md:w-auto px-8 py-4 rounded-full text-lg font-bold tracking-wide shadow-[0_0_30px_rgba(188,19,254,0.3)] hover:shadow-[0_0_50px_rgba(0,243,255,0.4)] transition-shadow cursor-pointer"
+                    >
+                        Get Early Access
                     </button>
 
-                    <button className="group w-full md:w-auto px-8 py-4 rounded-full glass-panel text-white font-medium hover:bg-white/10 transition-all flex items-center justify-center gap-3">
+                    <button
+                        onClick={() => document.getElementById('demo-video')?.scrollIntoView({ behavior: 'smooth' })}
+                        className="group w-full md:w-auto px-8 py-4 rounded-full glass-panel text-white font-medium hover:bg-white/10 transition-all flex items-center justify-center gap-3 cursor-pointer"
+                    >
                         <span className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-neon-blue group-hover:text-black transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                                 <polygon points="5 3 19 12 5 21 5 3" />
