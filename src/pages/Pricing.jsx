@@ -121,48 +121,36 @@ const Pricing = () => {
                             Included
                         </button>
                     ) : (
-                        <div className="relative w-full flex items-center justify-center pt-4">
-                            <PayPalButtons
-                                className="w-full relative z-10"
-                                forceReRender={[billingCycle, type]}
-                                style={{
-                                    layout: "horizontal",
-                                    height: 48,
-                                    tagline: false,
-                                    shape: 'pill',
-                                    label: 'paypal', // 'paypal' label gives the cleanest logo-only look 
-                                    color: 'gold'
-                                }}
-                                createSubscription={(data, actions) => {
-                                    const isInvalid = !planId ||
-                                        planId.includes('PLACEHOLDER') ||
-                                        planId.includes('XXXXX') ||
-                                        planId.includes('YYYYY') ||
-                                        planId.includes('UUUUU') ||
-                                        planId.includes('TEST') ||
-                                        planId.length < 10;
-
-                                    if (isInvalid) {
-                                        const msg = `CRITICAL: Invalid PayPal Plan ID: "${planId}".\n\n` +
-                                            "PayPal strictly requires a real Plan ID (usually starting with P- followed by ~20 characters).\n\n" +
-                                            "Please create a real plan in your PayPal Dashboard and update your .env file.";
-                                        alert(msg);
-                                        throw new Error("Invalid Plan ID format");
-                                    }
-                                    return actions.subscription.create({
-                                        plan_id: planId,
-                                        application_context: {
-                                            brand_name: "Cinematic Voice AI",
-                                            locale: "en-US",
-                                            shipping_preference: "NO_SHIPPING",
-                                            user_action: "SUBSCRIBE_NOW",
-                                            return_url: window.location.origin + "/pricing?success=true",
-                                            cancel_url: window.location.origin + "/pricing?canceled=true"
-                                        }
-                                    });
-                                }}
-                                onApprove={(data, actions) => handleApprove(data, actions, type, billingCycle)}
-                            />
+                        <div className="mt-auto pt-6 w-full">
+                            <div className="relative w-full h-[48px] rounded-full overflow-hidden bg-[#ffc43a] border border-[#ffc43a]">
+                                <div className="absolute inset-0 flex items-center justify-center scale-[1.05]">
+                                    <PayPalButtons
+                                        style={{
+                                            layout: "horizontal",
+                                            height: 48,
+                                            tagline: false,
+                                            shape: 'pill',
+                                            label: 'paypal',
+                                            color: 'gold'
+                                        }}
+                                        className="w-full h-full"
+                                        createSubscription={(data, actions) => {
+                                            return actions.subscription.create({
+                                                plan_id: planId,
+                                                application_context: {
+                                                    brand_name: "Cinematic Voice AI",
+                                                    locale: "en-US",
+                                                    shipping_preference: "NO_SHIPPING",
+                                                    user_action: "SUBSCRIBE_NOW",
+                                                    return_url: window.location.origin + "/pricing?success=true",
+                                                    cancel_url: window.location.origin + "/pricing?canceled=true"
+                                                }
+                                            });
+                                        }}
+                                        onApprove={(data, actions) => handleApprove(data, actions, type, billingCycle)}
+                                    />
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
