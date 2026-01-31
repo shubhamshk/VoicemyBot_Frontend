@@ -7,14 +7,16 @@ const DemoVideo = () => {
     const containerRef = useRef(null);
     const isInView = useInView(containerRef, { amount: 0.5 });
     const [isPlaying, setIsPlaying] = useState(false);
-    const [isMuted, setIsMuted] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
 
     useEffect(() => {
         if (isInView && videoRef.current) {
-            videoRef.current.play().catch((e) => {
-                console.log("Autoplay blocked or failed:", e);
-            });
-            setIsPlaying(true);
+            videoRef.current.play()
+                .then(() => setIsPlaying(true))
+                .catch((e) => {
+                    console.log("Autoplay blocked or failed:", e);
+                    setIsPlaying(false);
+                });
         } else if (!isInView && videoRef.current) {
             videoRef.current.pause();
             setIsPlaying(false);
@@ -46,6 +48,33 @@ const DemoVideo = () => {
         }
     };
 
+
+    const progressBarRef = useRef(null);
+    const [progress, setProgress] = useState(0);
+
+    const handleTimeUpdate = () => {
+        if (videoRef.current) {
+            const current = videoRef.current.currentTime;
+            const total = videoRef.current.duration;
+            if (total > 0) {
+                setProgress((current / total) * 100);
+            }
+        }
+    };
+
+    const handleScrubberClick = (e) => {
+        if (progressBarRef.current && videoRef.current) {
+            const rect = progressBarRef.current.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const width = rect.width;
+            const percentage = clickX / width;
+            const newTime = percentage * videoRef.current.duration;
+
+            videoRef.current.currentTime = newTime;
+            setProgress(percentage * 100);
+        }
+    };
+
     return (
         <section id="demo-video" className="py-24 relative px-6 bg-black/50" ref={containerRef}>
             {/* Background Glow */}
@@ -65,6 +94,7 @@ const DemoVideo = () => {
                             loop
                             muted={isMuted}
                             playsInline
+                            onTimeUpdate={handleTimeUpdate}
                             // Using an abstract tech background video as a placeholder for the demo
                             src="https://res.cloudinary.com/dkwxxfewv/video/upload/v1769895607/Untitled_video_-_Made_with_Clipchamp_3_trjsdi.mp4"
                         />
@@ -89,33 +119,53 @@ const DemoVideo = () => {
                             </motion.button>
                         </div>
 
-                        {/* Bottom Controls & Subtitle */}
-                        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 flex flex-col md:flex-row items-end md:items-center justify-between gap-6 pointer-events-none">
-                            <div className="pointer-events-auto flex-1">
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    whileInView={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.5 }}
-                                    className="inline-flex flex-col items-start gap-2"
+                        {/* Bottom Controls & Scrubber */}
+                        <div className="absolute bottom-0 left-0 right-0 flex flex-col justify-end pointer-events-none bg-gradient-to-t from-black/80 to-transparent pt-20">
+
+                            {/* Scrubber Bar */}
+                            <div
+                                className="w-full h-2 bg-white/10 relative cursor-pointer group/scrubber pointer-events-auto"
+                                ref={progressBarRef}
+                                onClick={handleScrubberClick}
+                            >
+                                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover/scrubber:opacity-100 transition-opacity" />
+                                {/* Progress */}
+                                <div
+                                    className="h-full bg-neon-blue relative"
+                                    style={{ width: `${progress}%` }}
                                 >
-                                    <div className="px-4 py-2 rounded-lg glass-panel border-l-4 border-l-neon-cyan bg-black/60 backdrop-blur-md max-w-md">
-                                        <p className="text-lg md:text-xl font-medium text-white shadow-black drop-shadow-md">
-                                            “See how AI characters come alive with real voices.”
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs text-neon-blue font-mono uppercase tracking-widest pl-1">
-                                        <span className="w-2 h-2 rounded-full bg-neon-blue animate-pulse" />
-                                        Live Demo
-                                    </div>
-                                </motion.div>
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-[0_0_15px_rgba(0,243,255,0.8)] opacity-0 group-hover/scrubber:opacity-100 transition-opacity scale-0 group-hover/scrubber:scale-100 duration-200" />
+                                </div>
                             </div>
 
-                            <button
-                                onClick={toggleMute}
-                                className="pointer-events-auto w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors hover:scale-105 active:scale-95"
-                            >
-                                {isMuted ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}
-                            </button>
+                            {/* Controls Row */}
+                            <div className="p-6 md:p-8 flex flex-col md:flex-row items-end md:items-center justify-between gap-6">
+                                <div className="pointer-events-auto flex-1">
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.5 }}
+                                        className="inline-flex flex-col items-start gap-2"
+                                    >
+                                        <div className="px-4 py-2 rounded-lg glass-panel border-l-4 border-l-neon-cyan bg-black/60 backdrop-blur-md max-w-md">
+                                            <p className="text-lg md:text-xl font-medium text-white shadow-black drop-shadow-md">
+                                                “See how AI characters come alive with real voices.”
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-neon-blue font-mono uppercase tracking-widest pl-1">
+                                            <span className="w-2 h-2 rounded-full bg-neon-blue animate-pulse" />
+                                            Live Demo
+                                        </div>
+                                    </motion.div>
+                                </div>
+
+                                <button
+                                    onClick={toggleMute}
+                                    className="pointer-events-auto w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors hover:scale-105 active:scale-95"
+                                >
+                                    {isMuted ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
