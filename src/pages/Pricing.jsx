@@ -118,12 +118,20 @@ const Pricing = () => {
                             <PayPalButtons
                                 style={{ layout: "horizontal", height: 48, tagline: false, shape: 'pill', label: 'subscribe' }}
                                 createSubscription={(data, actions) => {
-                                    if (!planId || planId.includes('PLACEHOLDER')) {
+                                    if (!planId || planId.includes('PLACEHOLDER') || planId.includes('XXXXX') || planId.includes('YYYYY') || planId.includes('UUUUU')) {
                                         alert("PayPal Plan ID is missing in configuration. Please check your .env file.");
                                         throw new Error("Plan ID missing");
                                     }
                                     return actions.subscription.create({
-                                        'plan_id': planId
+                                        plan_id: planId,
+                                        application_context: {
+                                            brand_name: "Cinematic Voice AI",
+                                            locale: "en-US",
+                                            shipping_preference: "NO_SHIPPING",
+                                            user_action: "SUBSCRIBE_NOW",
+                                            return_url: window.location.origin + "/pricing?success=true",
+                                            cancel_url: window.location.origin + "/pricing?canceled=true"
+                                        }
                                     });
                                 }}
                                 onApprove={(data, actions) => handleApprove(data, actions, type, billingCycle)}
