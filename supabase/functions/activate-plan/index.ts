@@ -1,7 +1,7 @@
 // This function activates user plans after payment.
 
-import { createClient } from "@supabase/supabase-js"
-import { serve } from "https://deno.land/std/http/server.ts";
+// @ts-ignore
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 console.log("Activate Plan Function initialized!")
 
@@ -12,7 +12,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   // ✅ Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -21,60 +21,71 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, planType } = await req.json()
+    const { userId, planType, subscriptionId } = await req.json()
 
-    // Create a Supabase client with the Auth context of the user that called the function.
-    // However, for plan upgrades, we need ADMIN privileges (Service Role Key)
-    // because regular users shouldn't be able to just call an API to upgrade themselves.
-    // In a real app, this function would verify the PayPal subscription/payment status first OR
-    // receive a webhook from PayPal directly.
-    // For this implementation as requested, we trust the caller (assuming integrated secure flow or for MVP).
+    console.log(`[EDGE] Activate Plan Request: userId=${userId}, planType=${planType}, subscriptionId=${subscriptionId}`);
 
+    // Create a Supabase admin client with Service Role Key
     const supabaseAdmin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-        {
-            auth: {
-                autoRefreshToken: false,
-                persistSession: false
-            }
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
         }
+      }
     )
 
-    let updateData = {}
+    // Determine what to update based on plan type
+    let updateData: any = {}
 
     if (planType === 'pro_monthly' || planType === 'pro_yearly') {
-        updateData = { plan: 'pro' }
-    } else if (planType === 'ultra_premium') {
-        updateData = { ultra_premium: true }
+      updateData = { plan: 'pro' }
+      console.log('[EDGE] Setting plan to PRO');
+    } else if (planType === 'ultra_yearly' || planType === 'ultra_premium') {
+      updateData = { ultra_premium: true }
+      console.log('[EDGE] Setting ultra_premium to true');
     } else {
-        return new Response(JSON.stringify({ error: 'Invalid plan type' }), {
-            headers: { "Content-Type": "application/json" },
-            status: 400,
-        })
+      console.error('[EDGE] Invalid plan type:', planType);
+      return new Response(JSON.stringify({ error: 'Invalid plan type' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      })
     }
 
+    // Update user plan in database
     const { data, error } = await supabaseAdmin
-        .from('users')
-        .update(updateData)
-        .eq('id', userId)
-        .select()
+      .from('users')
+      .update(updateData)
+      .eq('id', userId)
+      .select()
 
-    if (error) throw error
+    if (error) {
+      console.error('[EDGE] Database update error:', error);
+      throw error;
+    }
 
-    return new Response(JSON.stringify({ success: true, user: data }), {
-        headers: {
-            ...corsHeaders,
-            "Content-Type": "application/json",
-        },
-        status: 200,
+    console.log(`[EDGE] Plan activated successfully for user ${userId}:`, updateData);
+
+    return new Response(JSON.stringify({
+      success: true,
+      user: data,
+      message: 'Plan activated successfully'
+    }), {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
+      status: 200,
     })
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+    console.error('[EDGE] Activate Plan Error:', errorMessage);
     return new Response(JSON.stringify({ error: errorMessage }), {
-        headers: { "Content-Type": "application/json" },
-        status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400,
     })
   }
 })
