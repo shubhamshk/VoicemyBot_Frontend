@@ -1,28 +1,37 @@
--- Create enum for payment status
-create type payment_status_type as enum ('paid', 'skipped');
+-- Create enum for payment status (idempotent)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_status_type') THEN
+        CREATE TYPE payment_status_type AS ENUM ('paid', 'skipped');
+    END IF;
+END$$;
 
 -- Create waitlist_users table
-create table waitlist_users (
-  id uuid default gen_random_uuid() primary key,
-  email text not null,
-  url text not null,
-  contribution_amount numeric, -- nullable because skipped means no amount, or maybe 0? User said "skipped", implying no payment.
-  payment_status payment_status_type not null,
-  platform text default 'paypal',
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+CREATE TABLE IF NOT EXISTS waitlist_users (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  email text NOT NULL,
+  url text,
+  contribution_amount numeric,
+  payment_status payment_status_type NOT NULL,
+  platform text DEFAULT 'paypal',
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Enable Row Level Security
-alter table waitlist_users enable row level security;
+-- Enable Row Level Security (idempotent)
+ALTER TABLE waitlist_users ENABLE ROW LEVEL SECURITY;
 
--- Policies
+-- Policies (idempotent check)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow public insert to waitlist_users') THEN
+        CREATE POLICY "Allow public insert to waitlist_users"
+        ON waitlist_users FOR INSERT
+        WITH CHECK (true);
+    END IF;
 
--- Allow anyone to insert (public waitlist form)
-create policy "Allow public insert to waitlist_users"
-on waitlist_users for insert
-with check (true);
-
--- Allow service role to view/manage (admin dashboard)
-create policy "Allow service role to manage waitlist_users"
-on waitlist_users for all
-using (auth.role() = 'service_role');
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Allow service role to manage waitlist_users') THEN
+        CREATE POLICY "Allow service role to manage waitlist_users"
+        ON waitlist_users FOR ALL
+        USING (auth.role() = 'service_role');
+    END IF;
+END$$;
