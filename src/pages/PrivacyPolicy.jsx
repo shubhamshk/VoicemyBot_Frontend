@@ -11,7 +11,7 @@ const PrivacyPolicy = () => {
                 <section>
                     <h2 className="text-2xl font-semibold text-white mb-4">1. Introduction</h2>
                     <p>
-                        Welcome to Cinematic Voice AI ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy.
+                        Welcome to Voicemybot ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy.
                         This Privacy Policy describes how we collect, use, and share your personal information when you use our website and browser extension (collectively, the "Service").
                     </p>
                 </section>

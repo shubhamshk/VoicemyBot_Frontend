@@ -17,6 +17,8 @@ const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || "test";
 const ContributionModal = ({ isOpen, onClose, amount, setAmount, handlePayPalApprove, handleSkip, isSubmitting }) => {
     if (!isOpen) return null;
 
+    const isAmountValid = amount >= 5;
+
     return (
         <AnimatePresence>
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -24,87 +26,132 @@ const ContributionModal = ({ isOpen, onClose, amount, setAmount, handlePayPalApp
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-black/90 backdrop-blur-xl"
                     onClick={onClose}
-                    className="absolute inset-0 bg-black/80 backdrop-blur-md"
                 />
 
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="relative w-full max-w-lg bg-[#0a0a0a] rounded-3xl p-8 border border-white/10 shadow-2xl overflow-hidden"
+                    className="relative w-full max-w-lg bg-[#0a0a0a] rounded-3xl p-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
                 >
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-neon-blue to-neon-purple" />
-                    <button onClick={onClose} className="absolute top-4 right-4 text-white/30 hover:text-white transition-colors">
+                    {/* Glowing Borders */}
+                    <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-neon-blue to-transparent opacity-50" />
+                    <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-neon-purple to-transparent opacity-50" />
+
+                    <button onClick={onClose} className="absolute top-4 right-4 text-white/30 hover:text-white transition-colors z-20 cursor-pointer">
                         <X className="w-6 h-6" />
                     </button>
 
-                    <div className="text-center space-y-2 mb-8 mt-2">
-                        <h3 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                            Help us grow faster <span className="text-2xl">🚀</span>
+                    <div className="text-center space-y-2 mb-8 mt-2 relative z-10">
+                        <h3 className="text-3xl font-bold text-white flex items-center justify-center gap-2">
+                            Fuel the Revolution <span className="text-3xl">🚀</span>
                         </h3>
-                        <p className="text-white/60 text-sm">
-                            Your contribution helps us bring this extension to more platforms.
+                        <p className="text-white/60 text-sm max-w-sm mx-auto">
+                            Your contribution directly funds better voice models and faster servers.
                         </p>
                     </div>
 
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6 mb-8">
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium text-white/70 uppercase tracking-widest">Contribution</label>
-                            <div className="relative w-32">
-                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-neon-blue w-4 h-4" />
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-8 mb-8 relative group">
+                        {/* Glow effect for input container */}
+                        <div className="absolute inset-0 bg-neon-blue/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+
+                        <div className="flex items-center justify-between relative z-10">
+                            <label className="text-sm font-medium text-white/70 uppercase tracking-widest">Amount</label>
+                            <div className="relative w-40">
+                                <DollarSign className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${isAmountValid ? 'text-neon-blue' : 'text-red-400'}`} />
                                 <input
                                     type="number"
                                     value={amount}
                                     onChange={(e) => setAmount(Number(e.target.value))}
-                                    className="w-full bg-black/50 border border-white/20 rounded-lg py-2 pl-8 pr-3 text-white font-mono text-right focus:outline-none focus:border-neon-blue transition-colors"
+                                    min="5"
+                                    className={`w-full bg-black/60 border rounded-xl py-3 pl-10 pr-4 text-white font-mono text-xl text-right focus:outline-none transition-colors ${isAmountValid
+                                        ? 'border-white/20 focus:border-neon-blue'
+                                        : 'border-red-500/50 focus:border-red-500'
+                                        }`}
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <input
-                                type="range"
-                                min="5"
-                                max="2000"
-                                step="5"
-                                value={amount}
-                                onChange={(e) => setAmount(Number(e.target.value))}
-                                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-neon-blue hover:accent-neon-purple transition-all"
-                            />
-                            <div className="flex justify-between text-xs text-white/30 font-mono">
-                                <span>$5</span>
-                                <span>$2000</span>
+                        <div className="space-y-4 relative z-10">
+                            <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-neon-blue to-neon-purple"
+                                    style={{ width: `${Math.min((amount / 2000) * 100, 100)}%` }}
+                                />
+                                <input
+                                    type="range"
+                                    min="5"
+                                    max="2000"
+                                    step="5"
+                                    value={amount}
+                                    onChange={(e) => setAmount(Number(e.target.value))}
+                                    className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+                                />
+                            </div>
+
+                            <div className="flex justify-between items-center text-xs font-mono">
+                                <span className="text-white/30">$5</span>
+                                {!isAmountValid && (
+                                    <span className="text-red-400 font-bold flex items-center gap-1">
+                                        Min $5 Contribution
+                                    </span>
+                                )}
+                                <span className="text-white/30">$2000</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-3 relative z-10">
-                        <PayPalScriptProvider options={{ "client-id": paypalClientId }}>
-                            <PayPalButtons
-                                style={{ layout: "vertical", color: "blue", shape: "rect", label: "pay" }}
-                                createOrder={(data, actions) => {
-                                    return actions.order.create({
-                                        purchase_units: [
-                                            {
-                                                description: "Cinematic Voice AI - Early Access Contribution",
-                                                amount: {
-                                                    value: amount.toString()
-                                                }
-                                            }
-                                        ]
-                                    });
-                                }}
-                                onApprove={handlePayPalApprove}
-                            />
-                        </PayPalScriptProvider>
+                    <div className="space-y-4 relative z-10">
+                        {isAmountValid ? (
+                            <div className="min-h-[150px]">
+                                <PayPalScriptProvider options={{ "client-id": paypalClientId }}>
+                                    <PayPalButtons
+                                        style={{ layout: "vertical", color: "blue", shape: "rect", label: "pay", height: 50 }}
+                                        createOrder={(data, actions) => {
+                                            return actions.order.create({
+                                                purchase_units: [
+                                                    {
+                                                        description: "Cinematic Voice AI - Early Access Contribution",
+                                                        amount: {
+                                                            value: amount.toString()
+                                                        }
+                                                    }
+                                                ]
+                                            });
+                                        }}
+                                        onApprove={handlePayPalApprove}
+                                        onError={(err) => console.error("PayPal Error:", err)}
+                                    />
+                                </PayPalScriptProvider>
+                            </div>
+                        ) : (
+                            <div className="min-h-[150px] flex items-center justify-center border border-dashed border-white/10 rounded-xl bg-white/5">
+                                <p className="text-white/30 text-sm">Update amount to continue</p>
+                            </div>
+                        )}
+
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t border-white/10" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-[#0a0a0a] px-2 text-white/30">Or</span>
+                            </div>
+                        </div>
 
                         <button
                             onClick={handleSkip}
                             disabled={isSubmitting}
-                            className="w-full py-3 rounded-lg text-white/60 hover:text-white text-sm font-medium hover:bg-white/5 transition-all flex items-center justify-center cursor-pointer"
+                            className="w-full py-4 rounded-xl text-white/60 hover:text-white text-sm font-medium hover:bg-white/5 border border-transparent hover:border-white/10 transition-all flex items-center justify-center cursor-pointer gap-2"
                         >
-                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Skip & Join Waitlist for Free"}
+                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                                <>
+                                    <span>Skip Contribution</span>
+                                    <span className="opacity-50 text-xs">(Join Free)</span>
+                                </>
+                            )}
                         </button>
                     </div>
                 </motion.div>
@@ -241,7 +288,7 @@ const Waitlist = () => {
                         Get Early Access to <span className="text-gradient-primary">Cinematic Voice AI</span>
                     </h2>
                     <p className="text-lg text-white/60">
-                        Join the waitlist and help us bring this extension to more platforms.
+                        Join the waitlist to get early access for VoiceMyBot.
                     </p>
                 </div>
 
@@ -298,6 +345,22 @@ const Waitlist = () => {
                             )}
                         </form>
                     </div>
+                </motion.div>
+
+                {/* Extension Preview Image - placed after waitlist box */}
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ delay: 0.2 }}
+                    className="mt-12 relative rounded-2xl overflow-hidden glass-panel border border-white/10 p-2 bg-gradient-to-br from-white/5 to-white/0 shadow-2xl"
+                >
+                    <div className="absolute inset-0 bg-gradient-to-tr from-neon-blue/10 via-transparent to-neon-purple/10 pointer-events-none" />
+                    <img
+                        src="https://res.cloudinary.com/dkwxxfewv/image/upload/v1769895796/Untitled_design_otd9jz.png"
+                        alt="Extension UI Preview"
+                        className="w-full h-auto rounded-xl shadow-lg border border-white/5"
+                    />
                 </motion.div>
 
                 {/* Conversion Text */}

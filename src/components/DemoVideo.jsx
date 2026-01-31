@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
-import posterImage from '../assets/cinematic_demo_poster.png';
 
 const DemoVideo = () => {
     const videoRef = useRef(null);
@@ -62,12 +61,12 @@ const DemoVideo = () => {
                         <video
                             ref={videoRef}
                             className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-700"
-                            poster={posterImage}
+                            poster="https://res.cloudinary.com/dkwxxfewv/image/upload/v1769895754/Each_Char_Gets_their_own_voice_krjpys.png"
                             loop
                             muted={isMuted}
                             playsInline
                             // Using an abstract tech background video as a placeholder for the demo
-                            src="https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-background-loop-2-3210-large.mp4"
+                            src="https://res.cloudinary.com/dkwxxfewv/video/upload/v1769895607/Untitled_video_-_Made_with_Clipchamp_3_trjsdi.mp4"
                         />
 
                         {/* Overlay Gradient */}
