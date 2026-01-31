@@ -77,12 +77,18 @@ const Pricing = () => {
         }
 
         return (
-            <motion.div
-                whileHover={{ y: -10 }}
-                className={`relative p-8 rounded-2xl backdrop-blur-xl border ${recommended ? 'border-purple-500/50 bg-purple-900/10' : 'border-white/10 bg-white/5'} flex flex-col h-full`}
+        return (
+            <div
+                className={`relative p-8 rounded-2xl backdrop-blur-xl border transition-all duration-300 flex flex-col h-full group ${recommended
+                        ? 'border-purple-500/50 bg-purple-900/10 hover:border-purple-400 hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.3)]'
+                        : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                    }`}
             >
+                {/* Glow Effect on Hover */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-b from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
                 {recommended && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg z-20">
                         MOST POPULAR
                     </div>
                 )}
@@ -93,7 +99,7 @@ const Pricing = () => {
                     {price !== 'Free' && <span className="text-white/60">/{billingCycle === 'yearly' ? 'year' : 'month'}</span>}
                 </div>
 
-                <ul className="space-y-4 mb-8 flex-1">
+                <ul className="space-y-4 mb-8 flex-1 relative z-10">
                     {features.map((feature, idx) => (
                         <li key={idx} className="flex items-start gap-3 text-white/80">
                             {feature.included ? (
@@ -106,18 +112,19 @@ const Pricing = () => {
                     ))}
                 </ul>
 
-                <div className="mt-auto">
+                <div className="mt-auto relative z-10">
                     {isCurrentPlan ? (
-                        <button disabled className="w-full py-3 rounded-xl bg-white/10 text-white/50 font-semibold cursor-not-allowed">
+                        <button disabled className="w-full py-3.5 rounded-full bg-white/10 text-white/50 font-semibold cursor-not-allowed border border-white/5">
                             Current Plan
                         </button>
                     ) : type === 'free' ? (
-                        <button disabled className="w-full py-3 rounded-xl bg-white/10 text-white/50 font-semibold cursor-not-allowed">
+                        <button disabled className="w-full py-3.5 rounded-full bg-white/10 text-white/50 font-semibold cursor-not-allowed border border-white/5">
                             Included
                         </button>
                     ) : (
-                        <div className="z-10 relative bg-transparent rounded-lg overflow-hidden">
+                        <div className="relative w-full min-h-[48px] flex items-center justify-center">
                             <PayPalButtons
+                                className="w-full"
                                 style={{ layout: "horizontal", height: 48, tagline: false, shape: 'pill', label: 'subscribe', color: 'blue' }}
                                 createSubscription={(data, actions) => {
                                     const isInvalid = !planId ||
@@ -152,132 +159,133 @@ const Pricing = () => {
                         </div>
                     )}
                 </div>
-            </motion.div>
+            </div>
+        );
         );
     };
 
-    return (
-        <PayPalScriptProvider options={initialOptions}>
-            <div className="min-h-screen bg-deep-black text-white py-20 px-4 relative overflow-hidden">
-                {/* Background Effects */}
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px]" />
-                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]" />
-                </div>
-
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-16">
-                        <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 mb-6"
-                        >
-                            Unlock Cinematic Intelligence
-                        </motion.h1>
-                        <p className="text-xl text-white/60 max-w-2xl mx-auto mb-8">
-                            Choose the plan that fits your creative needs. Upgrade anytime.
-                        </p>
-
-                        {/* Toggle */}
-                        <div className="flex items-center justify-center gap-4 mb-12">
-                            <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-white' : 'text-white/60'}`}>Monthly</span>
-                            <button
-                                onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
-                                className="w-16 h-8 rounded-full bg-white/10 relative p-1 transition-colors hover:bg-white/20"
-                            >
-                                <motion.div
-                                    className="w-6 h-6 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
-                                    animate={{ x: billingCycle === 'monthly' ? 0 : 32 }}
-                                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                                />
-                            </button>
-                            <span className={`text-sm font-medium ${billingCycle === 'yearly' ? 'text-white' : 'text-white/60'}`}>
-                                Yearly <span className="text-green-400 text-xs ml-1">(Save 45%)</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        {/* FREE PLAN */}
-                        <PricingCard
-                            title="Free"
-                            price="Free"
-                            type="free"
-                            features={[
-                                { text: "Normal Voice: 50/day", included: true },
-                                { text: "Cinematic Voice: 10/day", included: true },
-                                { text: "Basic AI Features", included: true },
-                                { text: "Standard Processing", included: true },
-                                { text: "Custom Voice Builder", included: false },
-                            ]}
-                        />
-
-                        {/* PRO PLAN */}
-                        <PricingCard
-                            title="Pro"
-                            price={billingCycle === 'yearly' ? '$59' : '$9'}
-                            type="pro"
-                            recommended={true}
-                            features={[
-                                { text: "Unlimited Normal Voices", included: true },
-                                { text: "Unlimited Cinematic Voices", included: true },
-                                { text: "All AI Features Unlocked", included: true },
-                                { text: "Priority Processing", included: true },
-                                { text: "Custom Voice Builder", included: false },
-                            ]}
-                        />
-
-                        {/* ULTRA ADDON */}
-                        <PricingCard
-                            title="Ultra Premium"
-                            price={billingCycle === 'yearly' ? '$399' : '$59'}
-                            // Ultra is strictly Yearly based on prompt "$199/year (separate from Pro)"
-                            // Prompt says "Ultra Premium ($1.99/year)" in payments section but "Plan 3.. $199" in text.
-                            // I'll assume it's yearly only.
-                            type="ultra"
-                            features={[
-                                { text: "Everything in Pro", included: true },
-                                { text: "Custom AI Character Voice Builder", included: true },
-                                { text: "Define Personality & Tone", included: true },
-                                { text: "Generate Custom AI Voices", included: true },
-                                { text: "Early Access to New Features", included: true },
-                            ]}
-                        />
-                    </div>
-                </div>
-
-                {/* Success Overlay */}
-                <AnimatePresence>
-                    {successMessage && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-                        >
-                            <div className="bg-gradient-to-br from-purple-900/90 to-black p-8 rounded-3xl border border-purple-500/50 text-center max-w-sm mx-auto shadow-2xl">
-                                <motion.div
-                                    animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
-                                    transition={{ duration: 0.5 }}
-                                    className="text-6xl mb-4"
-                                >
-                                    🎉
-                                </motion.div>
-                                <h2 className="text-3xl font-bold text-white mb-2">Premium Unlocked!</h2>
-                                <p className="text-white/70 mb-6">{successMessage}</p>
-                                <button
-                                    onClick={() => setSuccessMessage(null)}
-                                    className="px-8 py-3 rounded-full bg-white text-black font-bold hover:scale-105 transition-transform"
-                                >
-                                    Awesome!
-                                </button>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+return (
+    <PayPalScriptProvider options={initialOptions}>
+        <div className="min-h-screen bg-deep-black text-white py-20 px-4 relative overflow-hidden">
+            {/* Background Effects */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]" />
             </div>
-        </PayPalScriptProvider>
-    );
+
+            <div className="max-w-7xl mx-auto">
+                <div className="text-center mb-16">
+                    <motion.h1
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 mb-6"
+                    >
+                        Unlock Cinematic Intelligence
+                    </motion.h1>
+                    <p className="text-xl text-white/60 max-w-2xl mx-auto mb-8">
+                        Choose the plan that fits your creative needs. Upgrade anytime.
+                    </p>
+
+                    {/* Toggle */}
+                    <div className="flex items-center justify-center gap-4 mb-12">
+                        <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-white' : 'text-white/60'}`}>Monthly</span>
+                        <button
+                            onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
+                            className="w-16 h-8 rounded-full bg-white/10 relative p-1 transition-colors hover:bg-white/20"
+                        >
+                            <motion.div
+                                className="w-6 h-6 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg"
+                                animate={{ x: billingCycle === 'monthly' ? 0 : 32 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                            />
+                        </button>
+                        <span className={`text-sm font-medium ${billingCycle === 'yearly' ? 'text-white' : 'text-white/60'}`}>
+                            Yearly <span className="text-green-400 text-xs ml-1">(Save 45%)</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                    {/* FREE PLAN */}
+                    <PricingCard
+                        title="Free"
+                        price="Free"
+                        type="free"
+                        features={[
+                            { text: "Normal Voice: 50/day", included: true },
+                            { text: "Cinematic Voice: 10/day", included: true },
+                            { text: "Basic AI Features", included: true },
+                            { text: "Standard Processing", included: true },
+                            { text: "Custom Voice Builder", included: false },
+                        ]}
+                    />
+
+                    {/* PRO PLAN */}
+                    <PricingCard
+                        title="Pro"
+                        price={billingCycle === 'yearly' ? '$59' : '$9'}
+                        type="pro"
+                        recommended={true}
+                        features={[
+                            { text: "Unlimited Normal Voices", included: true },
+                            { text: "Unlimited Cinematic Voices", included: true },
+                            { text: "All AI Features Unlocked", included: true },
+                            { text: "Priority Processing", included: true },
+                            { text: "Custom Voice Builder", included: false },
+                        ]}
+                    />
+
+                    {/* ULTRA ADDON */}
+                    <PricingCard
+                        title="Ultra Premium"
+                        price={billingCycle === 'yearly' ? '$399' : '$59'}
+                        // Ultra is strictly Yearly based on prompt "$199/year (separate from Pro)"
+                        // Prompt says "Ultra Premium ($1.99/year)" in payments section but "Plan 3.. $199" in text.
+                        // I'll assume it's yearly only.
+                        type="ultra"
+                        features={[
+                            { text: "Everything in Pro", included: true },
+                            { text: "Custom AI Character Voice Builder", included: true },
+                            { text: "Define Personality & Tone", included: true },
+                            { text: "Generate Custom AI Voices", included: true },
+                            { text: "Early Access to New Features", included: true },
+                        ]}
+                    />
+                </div>
+            </div>
+
+            {/* Success Overlay */}
+            <AnimatePresence>
+                {successMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                    >
+                        <div className="bg-gradient-to-br from-purple-900/90 to-black p-8 rounded-3xl border border-purple-500/50 text-center max-w-sm mx-auto shadow-2xl">
+                            <motion.div
+                                animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.5 }}
+                                className="text-6xl mb-4"
+                            >
+                                🎉
+                            </motion.div>
+                            <h2 className="text-3xl font-bold text-white mb-2">Premium Unlocked!</h2>
+                            <p className="text-white/70 mb-6">{successMessage}</p>
+                            <button
+                                onClick={() => setSuccessMessage(null)}
+                                className="px-8 py-3 rounded-full bg-white text-black font-bold hover:scale-105 transition-transform"
+                            >
+                                Awesome!
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    </PayPalScriptProvider>
+);
 };
 
 export default Pricing;
