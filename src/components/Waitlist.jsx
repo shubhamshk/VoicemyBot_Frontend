@@ -26,55 +26,80 @@ const ContributionModal = ({ isOpen, onClose, amount, setAmount, handlePayPalApp
                 />
 
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                    initial={{ scale: 0.95, opacity: 0, y: 30 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="relative w-full max-w-lg bg-[#0a0a0a] rounded-3xl p-8 border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                    exit={{ scale: 0.95, opacity: 0, y: 30 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                    className="relative w-full max-w-md bg-gradient-to-br from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] rounded-3xl p-6 border border-white/10 shadow-[0_20px_80px_rgba(0,0,0,0.8)] overflow-hidden"
                 >
-                    {/* Glowing Borders */}
-                    <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-neon-blue to-transparent opacity-50" />
-                    <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-neon-purple to-transparent opacity-50" />
+                    {/* Animated gradient borders */}
+                    <div className="absolute inset-0 rounded-3xl opacity-50 pointer-events-none">
+                        <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-neon-blue to-transparent animate-pulse" />
+                        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-neon-purple to-transparent animate-pulse" style={{ animationDelay: '1s' }} />
+                    </div>
 
-                    <button onClick={onClose} className="absolute top-4 right-4 text-white/30 hover:text-white transition-colors z-20 cursor-pointer">
-                        <X className="w-6 h-6" />
+                    {/* Close button */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 text-white/30 hover:text-white hover:rotate-90 transition-all duration-300 z-20 cursor-pointer"
+                    >
+                        <X className="w-5 h-5" />
                     </button>
 
-                    <div className="text-center space-y-2 mb-8 mt-2 relative z-10">
-                        <h3 className="text-3xl font-bold text-white flex items-center justify-center gap-2">
-                            Fuel the Revolution <span className="text-3xl">🚀</span>
+                    {/* Header - More compact */}
+                    <div className="text-center space-y-1 mb-6 relative z-10">
+                        <h3 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+                            Fuel the Revolution <span className="text-2xl">🚀</span>
                         </h3>
-                        <p className="text-white/60 text-sm max-w-sm mx-auto">
-                            Your contribution directly funds better voice models and faster servers.
+                        <p className="text-white/50 text-xs max-w-xs mx-auto">
+                            Your contribution funds better voice models & faster servers
                         </p>
                     </div>
 
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-8 mb-8 relative group">
-                        {/* Glow effect for input container */}
-                        <div className="absolute inset-0 bg-neon-blue/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    {/* Amount Input & Slider - Compact */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-5 mb-5 relative group backdrop-blur-sm">
+                        {/* Glow effect */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-neon-blue/10 via-transparent to-neon-purple/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
+                        {/* Amount display */}
                         <div className="flex items-center justify-between relative z-10">
-                            <label className="text-sm font-medium text-white/70 uppercase tracking-widest">Amount</label>
-                            <div className="relative w-40">
-                                <DollarSign className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${isAmountValid ? 'text-neon-blue' : 'text-red-400'}`} />
+                            <label className="text-xs font-medium text-white/60 uppercase tracking-wider">Amount</label>
+                            <div className="relative">
+                                <DollarSign className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-all duration-300 ${isAmountValid ? 'text-neon-blue' : 'text-red-400'}`} />
                                 <input
                                     type="number"
                                     value={amount}
                                     onChange={(e) => setAmount(Number(e.target.value))}
                                     min="5"
-                                    className={`w-full bg-black/60 border rounded-xl py-3 pl-10 pr-4 text-white font-mono text-xl text-right focus:outline-none transition-colors ${isAmountValid
-                                        ? 'border-white/20 focus:border-neon-blue'
+                                    className={`w-32 bg-black/60 border rounded-xl py-2 pl-8 pr-3 text-white font-mono text-lg text-right focus:outline-none transition-all duration-300 ${isAmountValid
+                                        ? 'border-white/20 focus:border-neon-blue focus:shadow-[0_0_20px_rgba(0,243,255,0.3)]'
                                         : 'border-red-500/50 focus:border-red-500'
                                         }`}
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-4 relative z-10">
-                            <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
-                                <div
-                                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-neon-blue to-neon-purple"
-                                    style={{ width: `${Math.min((amount / 2000) * 100, 100)}%` }}
+                        {/* Custom animated slider */}
+                        <div className="space-y-3 relative z-10">
+                            <div className="relative h-3 bg-white/5 rounded-full overflow-visible group/slider">
+                                {/* Progress bar with gradient */}
+                                <motion.div
+                                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-neon-blue via-purple-500 to-neon-purple rounded-full shadow-[0_0_15px_rgba(0,243,255,0.5)]"
+                                    initial={false}
+                                    animate={{ width: `${Math.min((amount / 2000) * 100, 100)}%` }}
+                                    transition={{ type: "spring", damping: 20, stiffness: 300 }}
                                 />
+
+                                {/* Custom slider thumb */}
+                                <motion.div
+                                    className="absolute top-1/2 -translate-y-1/2 w-5 h-5 bg-white rounded-full shadow-[0_0_20px_rgba(0,243,255,0.8)] border-2 border-neon-blue cursor-grab active:cursor-grabbing group-hover/slider:scale-125 transition-transform duration-200"
+                                    initial={false}
+                                    animate={{ left: `calc(${Math.min((amount / 2000) * 100, 100)}% - 10px)` }}
+                                    transition={{ type: "spring", damping: 20, stiffness: 300 }}
+                                    style={{ pointerEvents: 'none' }}
+                                />
+
+                                {/* Invisible range input */}
                                 <input
                                     type="range"
                                     min="5"
@@ -82,68 +107,87 @@ const ContributionModal = ({ isOpen, onClose, amount, setAmount, handlePayPalApp
                                     step="5"
                                     value={amount}
                                     onChange={(e) => setAmount(Number(e.target.value))}
-                                    className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+                                    className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer z-10"
                                 />
                             </div>
 
+                            {/* Min/Max labels */}
                             <div className="flex justify-between items-center text-xs font-mono">
                                 <span className="text-white/30">$5</span>
                                 {!isAmountValid && (
-                                    <span className="text-red-400 font-bold flex items-center gap-1">
-                                        Min $5 Contribution
-                                    </span>
+                                    <motion.span
+                                        initial={{ scale: 0.8, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        className="text-red-400 font-bold flex items-center gap-1"
+                                    >
+                                        ⚠️ Min $5
+                                    </motion.span>
                                 )}
                                 <span className="text-white/30">$2000</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-4 relative z-10">
+                    {/* PayPal Button Container - Glassmorphism */}
+                    <div className="space-y-3 relative z-10">
                         {isAmountValid ? (
-                            <div className="min-h-[150px]">
-                                <PayPalScriptProvider options={{ "client-id": paypalClientId }}>
-                                    <PayPalButtons
-                                        style={{ layout: "vertical", color: "blue", shape: "rect", label: "pay", height: 50 }}
-                                        createOrder={(data, actions) => {
-                                            return actions.order.create({
-                                                purchase_units: [
-                                                    {
-                                                        description: "Cinematic Voice AI - Early Access Contribution",
-                                                        amount: {
-                                                            value: amount.toString()
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="relative rounded-2xl overflow-hidden border border-white/20 bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-md p-4 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                            >
+                                {/* Glassmorphism glow */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-neon-blue/20 via-transparent to-neon-purple/20 opacity-50 pointer-events-none" />
+
+                                <div className="relative z-10">
+                                    <PayPalScriptProvider options={{ "client-id": paypalClientId }}>
+                                        <PayPalButtons
+                                            style={{ layout: "vertical", color: "blue", shape: "rect", label: "pay", height: 48 }}
+                                            createOrder={(data, actions) => {
+                                                return actions.order.create({
+                                                    purchase_units: [
+                                                        {
+                                                            description: "Cinematic Voice AI - Early Access Contribution",
+                                                            amount: {
+                                                                value: amount.toString()
+                                                            }
                                                         }
-                                                    }
-                                                ]
-                                            });
-                                        }}
-                                        onApprove={handlePayPalApprove}
-                                        onError={(err) => console.error("PayPal Error:", err)}
-                                    />
-                                </PayPalScriptProvider>
-                            </div>
+                                                    ]
+                                                });
+                                            }}
+                                            onApprove={handlePayPalApprove}
+                                            onError={(err) => console.error("PayPal Error:", err)}
+                                        />
+                                    </PayPalScriptProvider>
+                                </div>
+                            </motion.div>
                         ) : (
-                            <div className="min-h-[150px] flex items-center justify-center border border-dashed border-white/10 rounded-xl bg-white/5">
-                                <p className="text-white/30 text-sm">Update amount to continue</p>
+                            <div className="min-h-[120px] flex items-center justify-center border border-dashed border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm">
+                                <p className="text-white/30 text-sm">Adjust amount to continue</p>
                             </div>
                         )}
 
-                        <div className="relative">
+                        {/* Divider */}
+                        <div className="relative py-2">
                             <div className="absolute inset-0 flex items-center">
                                 <span className="w-full border-t border-white/10" />
                             </div>
                             <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-[#0a0a0a] px-2 text-white/30">Or</span>
+                                <span className="bg-[#0a0a0a] px-3 text-white/30">Or</span>
                             </div>
                         </div>
 
+                        {/* Skip button */}
                         <button
                             onClick={handleSkip}
                             disabled={isSubmitting}
-                            className="w-full py-4 rounded-xl text-white/60 hover:text-white text-sm font-medium hover:bg-white/5 border border-transparent hover:border-white/10 transition-all flex items-center justify-center cursor-pointer gap-2"
+                            className="w-full py-3 rounded-xl text-white/60 hover:text-white text-sm font-medium hover:bg-white/5 border border-transparent hover:border-white/10 transition-all duration-300 flex items-center justify-center cursor-pointer gap-2 group"
                         >
-                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                            {isSubmitting ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
                                 <>
-                                    <span>Skip Contribution</span>
+                                    <span className="group-hover:scale-105 transition-transform">Skip Contribution</span>
                                     <span className="opacity-50 text-xs">(Join Free)</span>
                                 </>
                             )}
