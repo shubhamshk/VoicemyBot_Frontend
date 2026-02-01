@@ -1,15 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from "@supabase/supabase-js";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { Check, ChevronRight, DollarSign, Mail, Loader2, Lock, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import LoginModal from "./LoginModal";
-
-// Initialize Supabase Client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { supabase } from "../lib/supabaseClient";
 
 // PayPal Client ID should be in env
 const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID || "test";
@@ -200,6 +195,7 @@ const Waitlist = () => {
         setIsSubmitting(true);
         try {
             const { error: dbError } = await supabase.from("waitlist_users").insert({
+                user_id: user?.id,
                 email,
                 payment_status: "skipped",
                 platform: "none",
@@ -221,6 +217,7 @@ const Waitlist = () => {
             // Handle successful payment
             try {
                 const { error: dbError } = await supabase.from("waitlist_users").insert({
+                    user_id: user?.id,
                     email,
                     contribution_amount: amount,
                     payment_status: "paid",
