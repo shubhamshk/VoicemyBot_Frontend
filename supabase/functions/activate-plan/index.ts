@@ -25,11 +25,31 @@ Deno.serve(async (req) => {
 
     console.log(`[EDGE] Activate Plan Request: userId=${userId}, planType=${planType}, subscriptionId=${subscriptionId}`);
 
-    // Create a 
-    //  admin client with Service Role Key
+    // Validate environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('PRIVATE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    console.log('[EDGE] Environment check:', {
+      hasUrl: !!supabaseUrl,
+      hasServiceKey: !!serviceRoleKey,
+      urlValue: supabaseUrl?.substring(0, 20) + '...'
+    });
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error('[EDGE] Missing environment variables');
+      return new Response(JSON.stringify({
+        error: 'Server configuration error',
+        details: 'Missing required environment variables'
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      });
+    }
+
+    // Create admin client with Service Role Key
     const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('PRIVATE_SERVICE_ROLE_KEY') ?? '',
+      supabaseUrl,
+      serviceRoleKey,
       {
         auth: {
           autoRefreshToken: false,
