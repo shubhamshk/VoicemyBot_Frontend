@@ -6,9 +6,12 @@ import { useState } from 'react';
 import LoginModal from './LoginModal';
 
 const Navbar = () => {
-    const { user } = useAuth();
+    const { user, userProfile } = useAuth();
     const navigate = useNavigate();
     const [isLoginOpen, setIsLoginOpen] = useState(false);
+
+    const isPro = userProfile?.plan === 'pro';
+    const isUltra = userProfile?.ultra_premium;
 
     return (
         <>
@@ -52,7 +55,27 @@ const Navbar = () => {
                                         {user.email?.[0].toUpperCase()}
                                     </div>
                                 )}
-                                <span className="hidden sm:inline font-medium text-sm">Dashboard</span>
+                                <div className="hidden sm:flex items-center gap-2">
+                                    <span className="font-medium text-sm">Dashboard</span>
+                                    {isUltra && (
+                                        <motion.span
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-400 via-orange-500 to-pink-500 text-white text-xs font-bold flex items-center gap-1"
+                                        >
+                                            👑 ULTRA
+                                        </motion.span>
+                                    )}
+                                    {isPro && !isUltra && (
+                                        <motion.span
+                                            initial={{ scale: 0 }}
+                                            animate={{ scale: 1 }}
+                                            className="px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs font-bold flex items-center gap-1"
+                                        >
+                                            ⭐ PRO
+                                        </motion.span>
+                                    )}
+                                </div>
                             </Link>
                         ) : (
                             <motion.button

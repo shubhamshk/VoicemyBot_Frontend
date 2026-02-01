@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Star, Zap, Crown, Shield } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
@@ -16,9 +16,29 @@ const Pricing = () => {
     const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'yearly'
     const [processing, setProcessing] = useState(false);
     const [successMessage, setSuccessMessage] = useState(null);
+    const [errorMessage, setErrorMessage] = useState(null);
 
     const isPro = userProfile?.plan === 'pro';
     const isUltra = userProfile?.ultra_premium;
+
+    // Check URL for success/error parameters from PayPal redirect
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('success') === 'true') {
+            setSuccessMessage('Payment successful! Your plan has been activated. 🎉');
+            // Clean URL
+            window.history.replaceState({}, '', '/pricing');
+            // Refresh profile to get updated plan
+            setTimeout(() => {
+                refreshProfile();
+                setSuccessMessage(null);
+            }, 3000);
+        } else if (params.get('canceled') === 'true') {
+            setErrorMessage('Payment was canceled. You can try again anytime.');
+            window.history.replaceState({}, '', '/pricing');
+            setTimeout(() => setErrorMessage(null), 5000);
+        }
+    }, [refreshProfile]);
 
     // PayPal Configuration
     const isSandbox = (import.meta.env.VITE_PAYPAL_CLIENT_ID || "").includes("sb-") ||
@@ -33,6 +53,8 @@ const Pricing = () => {
 
     const handleApprove = async (data, actions, planType, priceMethod) => {
         setProcessing(true);
+        console.log('[PayPal] Subscription approved:', data);
+
         try {
             // For subscription: 
             // data.subscriptionID contains the ID of the created subscription
@@ -46,15 +68,24 @@ const Pricing = () => {
                 }
             });
 
-            if (error) throw error;
+            console.log('[PayPal] Activation response:', { funcData, error });
 
+            if (error) {
+                console.error('[PayPal] Activation error:', error);
+                throw new Error(error.message || 'Failed to activate plan');
+            }
+
+            // Refresh profile to show new plan
             await refreshProfile();
+
             setSuccessMessage(`Successfully upgraded to ${planType.toUpperCase()}! 🎉`);
             setTimeout(() => setSuccessMessage(null), 5000);
 
         } catch (err) {
-            console.error(err);
-            alert("Payment failed or activation error. Please contact support.");
+            console.error('[PayPal] Error:', err);
+            const errorMsg = err.message || 'Payment processing failed';
+            setErrorMessage(`${errorMsg}. Please contact support if the issue persists.`);
+            setTimeout(() => setErrorMessage(null), 8000);
         } finally {
             setProcessing(false);
         }
@@ -72,8 +103,9 @@ const Pricing = () => {
                 ? import.meta.env.VITE_PAYPAL_PLAN_ID_PRO_YEARLY
                 : import.meta.env.VITE_PAYPAL_PLAN_ID_PRO_MONTHLY;
         } else if (type === 'ultra') {
-            // Ultra is yearly only in this implementation logic
-            planId = import.meta.env.VITE_PAYPAL_PLAN_ID_ULTRA_YEARLY;
+            planId = billingCycle === 'yearly'
+                ? import.meta.env.VITE_PAYPAL_PLAN_ID_ULTRA_YEARLY
+                : import.meta.env.VITE_PAYPAL_PLAN_ID_ULTRA_MONTHLY;
         }
 
         return (
@@ -272,6 +304,34 @@ const Pricing = () => {
                                     className="px-8 py-3 rounded-full bg-white text-black font-bold hover:scale-105 transition-transform"
                                 >
                                     Awesome!
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Error Overlay */}
+                    {errorMessage && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+                        >
+                            <div className="bg-gradient-to-br from-red-900/90 to-black p-8 rounded-3xl border border-red-500/50 text-center max-w-sm mx-auto shadow-2xl">
+                                <motion.div
+                                    animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.1, 1] }}
+                                    transition={{ duration: 0.5 }}
+                                    className="text-6xl mb-4"
+                                >
+                                    ⚠️
+                                </motion.div>
+                                <h2 className="text-3xl font-bold text-white mb-2">Payment Issue</h2>
+                                <p className="text-white/70 mb-6">{errorMessage}</p>
+                                <button
+                                    onClick={() => setErrorMessage(null)}
+                                    className="px-8 py-3 rounded-full bg-white text-black font-bold hover:scale-105 transition-transform"
+                                >
+                                    Got it
                                 </button>
                             </div>
                         </motion.div>

@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     if (planType === 'pro_monthly' || planType === 'pro_yearly') {
       updateData = { plan: 'pro' }
       console.log('[EDGE] Setting plan to PRO');
-    } else if (planType === 'ultra_yearly' || planType === 'ultra_premium') {
+    } else if (planType === 'ultra_yearly' || planType === 'ultra_monthly' || planType === 'ultra_premium') {
       updateData = { ultra_premium: true }
       console.log('[EDGE] Setting ultra_premium to true');
     } else {

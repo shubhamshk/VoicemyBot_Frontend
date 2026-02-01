@@ -1,0 +1,16 @@
+🚀 Creating Ultra Monthly Plan...
+
+📝 Getting PayPal access token...
+✅ Access token obtained
+
+💳 Creating Ultra Monthly plan...
+
+✅ Plan created: P-6F350352SF5984607NF7JNIA - Ultra Premium Monthly
+
+✅ Plan created successfully!
+
+📋 Add this to your .env file:
+
+VITE_PAYPAL_PLAN_ID_ULTRA_MONTHLY="P-6F350352SF5984607NF7JNIA"
+
+🎉 Done! Update your .env file and restart your dev server.
