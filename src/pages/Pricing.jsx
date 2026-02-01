@@ -67,12 +67,11 @@ const Pricing = () => {
             }
 
             console.log('[PayPal] Calling activate-plan with auth token');
+            console.log('[PayPal] User ID:', user.id);
+            console.log('[PayPal] Session exists:', !!session);
 
-            // Call Edge Function with authorization header
+            // Call Edge Function - Supabase client automatically includes auth header
             const { data: funcData, error } = await supabase.functions.invoke('activate-plan', {
-                headers: {
-                    Authorization: `Bearer ${session.access_token}`
-                },
                 body: {
                     userId: user.id,
                     planType: priceMethod === 'yearly' ? `${planType}_yearly` : `${planType}_monthly`,
