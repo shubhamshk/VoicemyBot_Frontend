@@ -28,14 +28,16 @@ Deno.serve(async (req) => {
     // Validate environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceRoleKey = Deno.env.get('PRIVATE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
 
     console.log('[EDGE] Environment check:', {
       hasUrl: !!supabaseUrl,
       hasServiceKey: !!serviceRoleKey,
+      hasAnonKey: !!anonKey,
       urlValue: supabaseUrl?.substring(0, 20) + '...'
     });
 
-    if (!supabaseUrl || !serviceRoleKey) {
+    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
       console.error('[EDGE] Missing environment variables');
       return new Response(JSON.stringify({
         error: 'Server configuration error',
@@ -46,7 +48,61 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create admin client with Service Role Key
+    // Verify the user's JWT token
+    const authHeader = req.headers.get('Authorization');
+    console.log('[EDGE] Auth header present:', !!authHeader);
+
+    if (!authHeader) {
+      console.error('[EDGE] No authorization header');
+      return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        details: 'No authorization token provided'
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
+    // Create client with anon key to verify the user's token
+    const supabaseClient = createClient(supabaseUrl, anonKey, {
+      global: {
+        headers: { Authorization: authHeader }
+      }
+    });
+
+    // Verify the user's session
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+
+    console.log('[EDGE] User verification:', {
+      authenticated: !!user,
+      userId: user?.id,
+      authError: authError?.message
+    });
+
+    if (authError || !user) {
+      console.error('[EDGE] Authentication failed:', authError);
+      return new Response(JSON.stringify({
+        error: 'Unauthorized',
+        details: 'Invalid or expired token'
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
+
+    // Verify the userId matches the authenticated user
+    if (user.id !== userId) {
+      console.error('[EDGE] User ID mismatch');
+      return new Response(JSON.stringify({
+        error: 'Forbidden',
+        details: 'User ID does not match authenticated user'
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403,
+      });
+    }
+
+    // Create admin client with Service Role Key for database updates
     const supabaseAdmin = createClient(
       supabaseUrl,
       serviceRoleKey,
@@ -57,6 +113,7 @@ Deno.serve(async (req) => {
         }
       }
     )
+
 
     // Determine what to update based on plan type
     let updateData: any = {}
