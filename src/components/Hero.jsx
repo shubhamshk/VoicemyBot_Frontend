@@ -48,12 +48,14 @@ const Hero = () => {
                     transition={{ duration: 0.8, delay: 0.6 }}
                     className="flex flex-col md:flex-row items-center justify-center gap-6"
                 >
-                    <button
-                        onClick={() => document.getElementById('waitlist-section')?.scrollIntoView({ behavior: 'smooth' })}
-                        className="btn-primary w-full md:w-auto px-8 py-4 rounded-full text-lg font-bold tracking-wide shadow-[0_0_30px_rgba(188,19,254,0.3)] hover:shadow-[0_0_50px_rgba(0,243,255,0.4)] transition-shadow cursor-pointer"
+                    <a
+                        href="https://microsoftedge.microsoft.com/addons/detail/voicemybot/iieofhoahkdglggmhkjckkjhlmhdfbli"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-primary w-full md:w-auto px-8 py-4 rounded-full text-lg font-bold tracking-wide shadow-[0_0_30px_rgba(188,19,254,0.3)] hover:shadow-[0_0_50px_rgba(0,243,255,0.4)] transition-shadow cursor-pointer inline-flex items-center justify-center"
                     >
                         Get Extension
-                    </button>
+                    </a>
 
                     <button
                         onClick={() => document.getElementById('demo-video')?.scrollIntoView({ behavior: 'smooth' })}

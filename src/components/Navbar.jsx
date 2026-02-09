@@ -88,13 +88,16 @@ const Navbar = () => {
                             </motion.button>
                         )}
 
-                        <motion.button
+                        <motion.a
+                            href="https://microsoftedge.microsoft.com/addons/detail/voicemybot/iieofhoahkdglggmhkjckkjhlmhdfbli"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="hidden sm:block px-6 py-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-bold tracking-wide shadow-lg shadow-purple-500/20 cursor-pointer"
+                            className="hidden sm:inline-flex items-center justify-center px-6 py-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white text-sm font-bold tracking-wide shadow-lg shadow-purple-500/20 cursor-pointer text-center"
                         >
                             Get Extension
-                        </motion.button>
+                        </motion.a>
                     </div>
                 </div>
             </motion.nav>

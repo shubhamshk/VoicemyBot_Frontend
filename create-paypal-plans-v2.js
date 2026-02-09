@@ -5,7 +5,7 @@
  * Usage: node create-paypal-plans-v2.js
  */
 
-const fs = require('fs');
+import fs from 'fs';
 
 const PAYPAL_CLIENT_ID = "AeTOPbkHmblQBhLPBo5-4wWAVYgzV_9SsjRTskmcLwHdRZU_Zq3sGxjryrVP7bhtbTbsYbpsIJ73glwN";
 const PAYPAL_CLIENT_SECRET = "EAHC2xSu3qk0nJM3lPrmRXkFF_rt6gSE_wFzyylTHj7yaz3h1g-aAtpsZaR39N2wdcnt1Z_bRCXsKFnH";

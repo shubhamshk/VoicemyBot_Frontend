@@ -4,20 +4,20 @@
 ✅ Access token obtained
 
 📦 Creating product...
-✅ Product created: PROD-68S78039YW4248729
+✅ Product created: PROD-91700483NW046451V
 
 💳 Creating subscription plans...
 
-✅ Plan created: P-3UH43008AM231851ANF676EQ - Pro Monthly
-✅ Plan created: P-2LC53591UV937772FNF676EQ - Pro Yearly
-✅ Plan created: P-6LG65661CH815683VNF676EQ - Ultra Premium Yearly
+✅ Plan created: P-5V340959S9787991KNGEY65Y - Pro Monthly
+✅ Plan created: P-3P3608130E2517437NGEY66A - Pro Yearly
+✅ Plan created: P-9YJ87040W62522501NGEY66I - Ultra Premium Yearly
 
 ✅ All plans created successfully!
 
 📋 Copy these Plan IDs to your .env file:
 
-VITE_PAYPAL_PLAN_ID_PRO_MONTHLY="P-3UH43008AM231851ANF676EQ"
-VITE_PAYPAL_PLAN_ID_PRO_YEARLY="P-2LC53591UV937772FNF676EQ"
-VITE_PAYPAL_PLAN_ID_ULTRA_YEARLY="P-6LG65661CH815683VNF676EQ"
+VITE_PAYPAL_PLAN_ID_PRO_MONTHLY="P-5V340959S9787991KNGEY65Y"
+VITE_PAYPAL_PLAN_ID_PRO_YEARLY="P-3P3608130E2517437NGEY66A"
+VITE_PAYPAL_PLAN_ID_ULTRA_YEARLY="P-9YJ87040W62522501NGEY66I"
 
 🎉 Done! Update your .env file and restart your dev server.
