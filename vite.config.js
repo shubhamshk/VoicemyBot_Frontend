@@ -8,4 +8,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    chunkSizeWarningLimit: 1000, // Increase limit to 1MB to reduce noise
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
+          ui: ['lucide-react', '@paypal/react-paypal-js']
+        }
+      }
+    }
+  }
 })
