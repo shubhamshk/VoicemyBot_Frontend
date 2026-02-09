@@ -5,16 +5,19 @@ import { useAuth } from '../context/AuthContext';
 import LoginModal from './LoginModal';
 
 // PayPal Configuration
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
-const PLAN_IDS = {
-    PRO_MONTHLY: import.meta.env.VITE_PAYPAL_PLAN_ID_PRO_MONTHLY,
-    PRO_YEARLY: import.meta.env.VITE_PAYPAL_PLAN_ID_PRO_YEARLY,
-    ULTRA_YEARLY: import.meta.env.VITE_PAYPAL_PLAN_ID_ULTRA_YEARLY
+const PAYPAL_CLIENT_ID = "AeTOPbkHmblQBhLPBo5-4wWAVYgzV_9SsjRTskmcLwHdRZU_Zq3sGxjryrVP7bhtbTbsYbpsIJ73glwN";
+
+// Hardcoded Plan IDs to ensure they match exactly what was generated
+const PLANS = {
+    PRO_MONTHLY: "P-5V340959S9787991KNGEY65Y",
+    PRO_YEARLY: "P-3P3608130E2517437NGEY66A",
+    ULTRA_YEARLY: "P-9YJ87040W62522501NGEY66I"
 };
 
 const PricingCard = ({ title, price, features, isPremium = false, planId, onLoginReq }) => {
     const { user } = useAuth();
     const [success, setSuccess] = useState(false);
+    const [error, setError] = useState(null);
 
     if (success) {
         return (
@@ -64,6 +67,11 @@ const PricingCard = ({ title, price, features, isPremium = false, planId, onLogi
             {planId ? (
                 user ? (
                     <div className="relative z-10 w-full min-h-[45px]">
+                        {error && (
+                            <div className="text-red-400 text-sm mb-2 text-center bg-red-500/10 p-2 rounded">
+                                {error}
+                            </div>
+                        )}
                         <PayPalButtons
                             style={{ shape: 'rect', color: isPremium ? 'gold' : 'blue', layout: 'vertical', label: 'subscribe' }}
                             createSubscription={(data, actions) => {
@@ -74,9 +82,13 @@ const PricingCard = ({ title, price, features, isPremium = false, planId, onLogi
                             onApprove={(data, actions) => {
                                 console.log('Subscription approved:', data);
                                 setSuccess(true);
-                                // Optional: Call backend to sync status immediately if needed
-                                // Currently handled by webhook or AuthContext refresh if implemented
+                                // Here you would typically send the subscriptionID to your backend
+                                // For now, we simulate success
                                 setTimeout(() => window.location.reload(), 2000);
+                            }}
+                            onError={(err) => {
+                                console.error('PayPal Error:', err);
+                                setError("Payment failed. Please try again.");
                             }}
                         />
                     </div>
@@ -144,7 +156,7 @@ const Pricing = () => {
                                 "Priority Support",
                                 "Monthly Billing"
                             ]}
-                            planId={PLAN_IDS.PRO_MONTHLY}
+                            planId={PLANS.PRO_MONTHLY}
                             onLoginReq={() => setLoginOpen(true)}
                         />
                         <PricingCard
@@ -158,17 +170,13 @@ const Pricing = () => {
                                 "Early Access Features"
                             ]}
                             isPremium={true}
-                            planId={PLAN_IDS.PRO_YEARLY}
+                            planId={PLANS.PRO_YEARLY}
                             onLoginReq={() => setLoginOpen(true)}
                         />
                     </div>
 
-                    {/* Ultra Tier for Enterprise/Whales - Optional or hidden if not needed primarily, but adding as footer option */}
                     <div className="mt-12 text-center">
-                        <p className="text-white/40 mb-4">Looking for maximum power?</p>
-                        <div className="inline-block max-w-md w-full">
-                            {/* You could add the Ultra plan here if desired, but sticking to the main 3 for layout balance */}
-                        </div>
+                        {/* Ultra Plan (Hidden for now, available in code if needed: PLANS.ULTRA_YEARLY) */}
                     </div>
                 </div>
             </section>
