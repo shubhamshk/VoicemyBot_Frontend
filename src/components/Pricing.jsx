@@ -1,18 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { useAuth } from '../context/AuthContext';
 import LoginModal from './LoginModal';
 
-// PayPal Configuration
-const PAYPAL_CLIENT_ID = "AeTOPbkHmblQBhLPBo5-4wWAVYgzV_9SsjRTskmcLwHdRZU_Zq3sGxjryrVP7bhtbTbsYbpsIJ73glwN";
+// 1. Load Configuration from Environment Variables
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
-// Hardcoded Plan IDs to ensure they match exactly what was generated
 const PLANS = {
-    PRO_MONTHLY: "P-5V340959S9787991KNGEY65Y",
-    PRO_YEARLY: "P-3P3608130E2517437NGEY66A",
-    ULTRA_YEARLY: "P-9YJ87040W62522501NGEY66I"
+    PRO_MONTHLY: import.meta.env.VITE_PAYPAL_PLAN_ID_PRO_MONTHLY,
+    PRO_YEARLY: import.meta.env.VITE_PAYPAL_PLAN_ID_PRO_YEARLY,
+    ULTRA_YEARLY: import.meta.env.VITE_PAYPAL_PLAN_ID_ULTRA_YEARLY
 };
+
+// Debug: Log loaded configuration to Verify Environment
+console.log('[Pricing] PayPal Config Loaded:', {
+    clientId: PAYPAL_CLIENT_ID ? 'Loaded (starts with ' + PAYPAL_CLIENT_ID.substring(0, 5) + '...)' : 'MISSING',
+    plans: PLANS
+});
 
 const PricingCard = ({ title, price, features, isPremium = false, planId, onLoginReq }) => {
     const { user } = useAuth();
@@ -75,19 +80,29 @@ const PricingCard = ({ title, price, features, isPremium = false, planId, onLogi
                         <PayPalButtons
                             style={{ shape: 'rect', color: isPremium ? 'gold' : 'blue', layout: 'vertical', label: 'subscribe' }}
                             createSubscription={(data, actions) => {
+                                console.log(`[PayPal] Creating subscription for plan: ${planId}`);
+                                if (!planId) {
+                                    console.error('[PayPal] Error: Plan ID is missing!');
+                                    setError("Configuration Error: Missing Plan ID");
+                                    return;
+                                }
                                 return actions.subscription.create({
                                     plan_id: planId
+                                }).catch(err => {
+                                    console.error('[PayPal] Create Subscription Failed:', err);
+                                    setError("Failed to initialize payment.");
+                                    throw err;
                                 });
                             }}
                             onApprove={(data, actions) => {
-                                console.log('Subscription approved:', data);
+                                console.log('[PayPal] Subscription Approved:', data);
                                 setSuccess(true);
-                                // Here you would typically send the subscriptionID to your backend
+                                // Here you would typically send the subscriptionID (data.subscriptionID) to your backend
                                 // For now, we simulate success
                                 setTimeout(() => window.location.reload(), 2000);
                             }}
                             onError={(err) => {
-                                console.error('PayPal Error:', err);
+                                console.error('[PayPal] Component Error:', err);
                                 setError("Payment failed. Please try again.");
                             }}
                         />
@@ -117,6 +132,12 @@ const PricingCard = ({ title, price, features, isPremium = false, planId, onLogi
 
 const Pricing = () => {
     const [loginOpen, setLoginOpen] = useState(false);
+
+    // Ensure Client ID is available
+    if (!PAYPAL_CLIENT_ID) {
+        console.error('[Pricing] Critical Error: VITE_PAYPAL_CLIENT_ID is missing from environment variables.');
+        return <div className="text-red-500 text-center py-20">Payment configuration error. Please contact support.</div>;
+    }
 
     return (
         <PayPalScriptProvider options={{
@@ -176,7 +197,7 @@ const Pricing = () => {
                     </div>
 
                     <div className="mt-12 text-center">
-                        {/* Ultra Plan (Hidden for now, available in code if needed: PLANS.ULTRA_YEARLY) */}
+                        {/* Ultra Plan (Usage: PLANS.ULTRA_YEARLY) */}
                     </div>
                 </div>
             </section>
