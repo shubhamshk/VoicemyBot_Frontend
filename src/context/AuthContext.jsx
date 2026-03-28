@@ -69,6 +69,9 @@ export const AuthProvider = ({ children }) => {
                 fetchUserProfile(session.user.id);
             }
             setLoading(false);
+        }).catch(error => {
+            console.error("[Auth] Session check failed:", error);
+            setLoading(false);
         });
 
         // Listen for changes
