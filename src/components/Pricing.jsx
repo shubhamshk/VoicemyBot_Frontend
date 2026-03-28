@@ -9,7 +9,7 @@ import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
-const PricingCard = ({ title, price, subtitle, features, recommended, type, isLifetime = false, billingCycle, onLoginReq, onSuccess, onError }) => {
+const PricingCard = ({ title, price, subtitle, features, recommended, type, isLifetime = false, billingCycle, onLoginReq, onSuccess, onError, checkoutPlan, onCheckoutReq }) => {
     const { user, userProfile } = useAuth();
     
     const isPro = userProfile?.plan === 'pro';
@@ -31,6 +31,7 @@ const PricingCard = ({ title, price, subtitle, features, recommended, type, isLi
             });
             if (error) throw new Error(error.message);
             onSuccess(`Successfully upgraded! 🎉`);
+            onCheckoutReq(null);
         } catch (err) {
             onError(`${err.message || 'Payment processing failed'}.`);
         }
@@ -48,16 +49,25 @@ const PricingCard = ({ title, price, subtitle, features, recommended, type, isLi
             });
             if (error) throw new Error(error.message);
             onSuccess(`Successfully unlocked Lifetime Access! 🎉`);
+            onCheckoutReq(null);
         } catch (err) {
             onError(`${err.message || 'Payment processing failed'}.`);
         }
+    };
+
+    const handleActionClick = () => {
+        if (!user) {
+            onLoginReq();
+            return;
+        }
+        onCheckoutReq(type);
     };
 
     return (
         <motion.div
             whileHover={{ y: -10 }}
             className={`relative p-8 rounded-3xl backdrop-blur-xl border transition-all duration-300 flex flex-col h-full group ${recommended
-                ? 'border-purple-500/50 bg-purple-900/10 shadow-[0_0_40px_-10px_rgba(168,85,247,0.4)]'
+                ? 'border-purple-500/50 bg-purple-900/10 shadow-[0_0_40px_-10px_rgba(168,85,247,0.4)] md:-mt-4 md:mb-4'
                 : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
                 }`}
         >
@@ -83,10 +93,15 @@ const PricingCard = ({ title, price, subtitle, features, recommended, type, isLi
             </div>
             
             <div className="mb-8 relative z-10">
-                <span className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">{price}</span>
-                <span className="text-white/50 ml-2 font-medium">
-                    {isLifetime ? 'forever' : (billingCycle === 'yearly' ? '/year' : '/month')}
-                </span>
+                <div className="flex items-baseline">
+                    <span className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">{price}</span>
+                    <span className="text-white/50 ml-2 font-medium">
+                        {isLifetime ? 'forever' : '/month'}
+                    </span>
+                </div>
+                {type === 'pro_yearly' && (
+                    <div className="text-white/40 text-sm mt-1">Billed $49 yearly</div>
+                )}
             </div>
 
             <ul className="space-y-4 mb-8 flex-1 relative z-10">
@@ -107,11 +122,7 @@ const PricingCard = ({ title, price, subtitle, features, recommended, type, isLi
             </ul>
 
             <div className="mt-auto relative z-10">
-                {!user ? (
-                    <button onClick={onLoginReq} className="w-full py-4 rounded-xl font-bold bg-white/10 hover:bg-white/20 text-white transition-all border border-white/5">
-                        Please Login First
-                    </button>
-                ) : isCurrentPlan ? (
+                {isCurrentPlan ? (
                     <button disabled className="w-full py-4 rounded-xl font-bold bg-white/10 text-white/50 cursor-not-allowed border border-white/5">
                         {type === 'free' ? 'Included' : 'Current Plan'}
                     </button>
@@ -119,13 +130,26 @@ const PricingCard = ({ title, price, subtitle, features, recommended, type, isLi
                     <button disabled className="w-full py-4 rounded-xl font-bold bg-white/10 text-white/50 cursor-not-allowed border border-white/5">
                         Included
                     </button>
+                ) : checkoutPlan !== type ? (
+                    <button 
+                        onClick={handleActionClick}
+                        className={`w-full py-4 rounded-xl font-bold transition-all duration-300 ${
+                            recommended
+                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-[1.02]'
+                                : isLifetime
+                                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:scale-[1.02]'
+                                    : 'bg-white/10 text-white hover:bg-white/20 hover:scale-[1.02] border border-white/5'
+                        }`}
+                    >
+                        {isLifetime ? 'Get Lifetime Access' : 'Choose Plan'}
+                    </button>
                 ) : (
-                    <div className="mt-auto pt-2 w-full">
+                    <div className="mt-auto pt-2 w-full animate-in fade-in duration-300">
                         <div className="relative w-full overflow-hidden bg-transparent rounded-xl">
                             {isLifetime ? (
                                 <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "USD", intent: "capture" }}>
                                     <PayPalButtons
-                                        style={{ layout: "horizontal", height: 48, shape: 'pill', label: 'pay', color: 'gold', tagline: false }}
+                                        style={{ layout: "horizontal", height: 48, shape: 'rect', label: 'pay', color: 'gold', tagline: false }}
                                         createOrder={(data, actions) => {
                                             return actions.order.create({
                                                 purchase_units: [{
@@ -141,8 +165,8 @@ const PricingCard = ({ title, price, subtitle, features, recommended, type, isLi
                             ) : (
                                 <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "USD", intent: "subscription", vault: true }}>
                                     <PayPalButtons
-                                        key={planId} // Force re-render when planId changes between monthly/yearly
-                                        style={{ layout: "horizontal", height: 48, shape: 'pill', label: 'subscribe', color: 'gold', tagline: false }}
+                                        key={planId}
+                                        style={{ layout: "horizontal", height: 48, shape: 'rect', label: 'subscribe', color: 'gold', tagline: false }}
                                         createSubscription={(data, actions) => {
                                             return actions.subscription.create({ plan_id: planId });
                                         }}
@@ -152,6 +176,9 @@ const PricingCard = ({ title, price, subtitle, features, recommended, type, isLi
                                 </PayPalScriptProvider>
                             )}
                         </div>
+                        <button onClick={() => onCheckoutReq(null)} className="w-full mt-2 text-white/50 text-sm hover:text-white transition-colors">
+                            Cancel
+                        </button>
                     </div>
                 )}
                 {isLifetime && (
@@ -166,9 +193,10 @@ const PricingCard = ({ title, price, subtitle, features, recommended, type, isLi
 
 const Pricing = () => {
     const [loginOpen, setLoginOpen] = useState(false);
-    const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'yearly'
+    const [billingCycle, setBillingCycle] = useState('yearly'); // 'monthly' | 'yearly'
     const [successMessage, setSuccessMessage] = useState(null);
     const [errorMessage, setErrorMessage] = useState(null);
+    const [checkoutPlan, setCheckoutPlan] = useState(null);
     const { refreshProfile } = useAuth();
     
     const handleSuccess = (msg) => {
@@ -222,6 +250,8 @@ const Pricing = () => {
                         type="free"
                         billingCycle={billingCycle}
                         onLoginReq={() => setLoginOpen(true)}
+                        checkoutPlan={checkoutPlan}
+                        onCheckoutReq={setCheckoutPlan}
                         features={[
                             { text: "Normal Voice: 50/day", included: true },
                             { text: "Cinematic Voice: 10/day", included: true },
@@ -235,13 +265,15 @@ const Pricing = () => {
                     <PricingCard
                         title="Pro"
                         subtitle="For serious creators needing unlimited access."
-                        price={billingCycle === 'yearly' ? '$49' : '$9'}
+                        price={billingCycle === 'yearly' ? '$4' : '$9'}
                         type={billingCycle === 'yearly' ? 'pro_yearly' : 'pro_monthly'}
                         recommended={true}
                         billingCycle={billingCycle}
                         onLoginReq={() => setLoginOpen(true)}
                         onSuccess={handleSuccess}
                         onError={handleError}
+                        checkoutPlan={checkoutPlan}
+                        onCheckoutReq={setCheckoutPlan}
                         features={[
                             { text: "Unlimited Normal Voices", included: true },
                             { text: "Unlimited Cinematic Voices", included: true },
@@ -262,6 +294,8 @@ const Pricing = () => {
                         onLoginReq={() => setLoginOpen(true)}
                         onSuccess={handleSuccess}
                         onError={handleError}
+                        checkoutPlan={checkoutPlan}
+                        onCheckoutReq={setCheckoutPlan}
                         features={[
                             { text: "Everything in Pro included", included: true },
                             { text: "Never pay a monthly fee again", included: true },

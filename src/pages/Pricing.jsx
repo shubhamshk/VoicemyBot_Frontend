@@ -9,9 +9,10 @@ const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
 const Pricing = () => {
     const { user, userProfile, refreshProfile } = useAuth();
-    const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' | 'yearly'
+    const [billingCycle, setBillingCycle] = useState('yearly'); // 'monthly' | 'yearly'
     const [successMessage, setSuccessMessage] = useState(null);
     const [errorMessage, setErrorMessage] = useState(null);
+    const [checkoutPlan, setCheckoutPlan] = useState(null);
 
     const isPro = userProfile?.plan === 'pro';
     const isUltra = userProfile?.ultra_premium;
@@ -117,10 +118,15 @@ const Pricing = () => {
                 </div>
                 
                 <div className="mb-8 relative z-10">
-                    <span className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">{price}</span>
-                    <span className="text-white/50 ml-2 font-medium">
-                        {isLifetime ? 'forever' : (billingCycle === 'yearly' ? '/year' : '/month')}
-                    </span>
+                    <div className="flex items-baseline">
+                        <span className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">{price}</span>
+                        <span className="text-white/50 ml-2 font-medium">
+                            {isLifetime ? 'forever' : '/month'}
+                        </span>
+                    </div>
+                    {type === 'pro_yearly' && (
+                        <div className="text-white/40 text-sm mt-1">Billed $49 yearly</div>
+                    )}
                 </div>
 
                 <ul className="space-y-4 mb-8 flex-1 relative z-10">
@@ -153,13 +159,26 @@ const Pricing = () => {
                         <button disabled className="w-full py-4 rounded-xl font-bold bg-white/10 text-white/50 cursor-not-allowed border border-white/5">
                             Included
                         </button>
+                    ) : checkoutPlan !== type ? (
+                        <button 
+                            onClick={() => setCheckoutPlan(type)}
+                            className={`w-full py-4 rounded-xl font-bold transition-all duration-300 ${
+                                recommended
+                                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:shadow-[0_0_20px_rgba(168,85,247,0.4)] hover:scale-[1.02]'
+                                    : isLifetime
+                                        ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:scale-[1.02]'
+                                        : 'bg-white/10 text-white hover:bg-white/20 hover:scale-[1.02] border border-white/5'
+                            }`}
+                        >
+                            {isLifetime ? 'Get Lifetime Access' : 'Choose Plan'}
+                        </button>
                     ) : (
-                        <div className="mt-auto pt-2 w-full">
+                        <div className="mt-auto pt-2 w-full animate-in fade-in duration-300">
                             <div className="relative w-full overflow-hidden bg-transparent rounded-xl">
                                 {isLifetime ? (
                                     <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "USD", intent: "capture" }}>
                                         <PayPalButtons
-                                            style={{ layout: "horizontal", height: 48, shape: 'pill', label: 'pay', color: 'gold', tagline: false }}
+                                            style={{ layout: "horizontal", height: 48, shape: 'rect', label: 'pay', color: 'gold', tagline: false }}
                                             createOrder={(data, actions) => {
                                                 return actions.order.create({
                                                     purchase_units: [{
@@ -175,8 +194,8 @@ const Pricing = () => {
                                 ) : (
                                     <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "USD", intent: "subscription", vault: true }}>
                                         <PayPalButtons
-                                            key={planId} // Force re-render when planId changes between monthly/yearly
-                                            style={{ layout: "horizontal", height: 48, shape: 'pill', label: 'subscribe', color: 'gold', tagline: false }}
+                                            key={planId} // Force re-render when planId changes
+                                            style={{ layout: "horizontal", height: 48, shape: 'rect', label: 'subscribe', color: 'gold', tagline: false }}
                                             createSubscription={(data, actions) => {
                                                 return actions.subscription.create({ plan_id: planId });
                                             }}
@@ -186,6 +205,9 @@ const Pricing = () => {
                                     </PayPalScriptProvider>
                                 )}
                             </div>
+                            <button onClick={() => setCheckoutPlan(null)} className="w-full mt-2 text-white/50 text-sm hover:text-white transition-colors">
+                                Cancel
+                            </button>
                         </div>
                     )}
                     {isLifetime && (
