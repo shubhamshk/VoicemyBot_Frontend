@@ -86,6 +86,7 @@ Deno.serve(async (req) => {
             .single();
 
         const isPro = userData?.plan === 'pro' || userData?.ultra_premium;
+        const isUltra = !!userData?.ultra_premium;
 
         // 5. Get today's usage
         const today = new Date().toISOString().split('T')[0];
@@ -100,26 +101,26 @@ Deno.serve(async (req) => {
         const currentNormal = usageData?.normal_used ?? 0;
         const currentCinematic = usageData?.cinematic_used ?? 0;
 
-        // 6. Check limits (only for free users)
-        if (!isPro) {
-            const LIMITS = {
-                normal: 50,
-                cinematic: 10
-            };
+        // 6. Check limits
+        // Ultra = unlimited (null limit). Pro = per-user stored limit. Free = 50/10.
+        if (!isUltra) {
+            // Read stored limits; fall back to free defaults if not set
+            const normalLimit: number = userData?.normal_voice_limit ?? 50;
+            const cinematicLimit: number = userData?.cinematic_voice_limit ?? 10;
 
-            if (type === 'normal' && currentNormal >= LIMITS.normal) {
-                console.log(`[EDGE] LIMIT REACHED: ${user.id} (normal: ${currentNormal}/${LIMITS.normal})`);
+            if (type === 'normal' && currentNormal >= normalLimit) {
+                console.log(`[EDGE] LIMIT REACHED: ${user.id} (normal: ${currentNormal}/${normalLimit})`);
                 return jsonResponse({
-                    error: `Daily limit reached for normal voices (${LIMITS.normal}/day)`,
+                    error: `Daily limit reached for normal voices (${normalLimit}/day)`,
                     limit_reached: true,
                     type: 'normal'
                 }, 403);
             }
 
-            if (type === 'cinematic' && currentCinematic >= LIMITS.cinematic) {
-                console.log(`[EDGE] LIMIT REACHED: ${user.id} (cinematic: ${currentCinematic}/${LIMITS.cinematic})`);
+            if (type === 'cinematic' && currentCinematic >= cinematicLimit) {
+                console.log(`[EDGE] LIMIT REACHED: ${user.id} (cinematic: ${currentCinematic}/${cinematicLimit})`);
                 return jsonResponse({
-                    error: `Daily limit reached for cinematic voices (${LIMITS.cinematic}/day)`,
+                    error: `Daily limit reached for cinematic voices (${cinematicLimit}/day)`,
                     limit_reached: true,
                     type: 'cinematic'
                 }, 403);

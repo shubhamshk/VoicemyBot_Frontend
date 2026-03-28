@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }) => {
 
             if (data) {
                 setUserProfile(data);
+                syncProfileToExtension(data); // ← keep extension in sync
                 return;
             }
 
@@ -37,7 +38,9 @@ export const AuthProvider = ({ children }) => {
                     email: currentUser.email,
                     name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || 'User',
                     avatar_url: currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || '',
-                    plan: 'free'
+                    plan: 'free',
+                    normal_voice_limit: 50,
+                    cinematic_voice_limit: 10,
                 };
 
                 const { data: createdData, error: insertError } = await supabase
@@ -51,6 +54,7 @@ export const AuthProvider = ({ children }) => {
                 } else {
                     console.log('[Auth] Profile created successfully');
                     setUserProfile(createdData);
+                    syncProfileToExtension(createdData); // ← keep extension in sync
                 }
             }
         } catch (e) {
@@ -91,6 +95,31 @@ export const AuthProvider = ({ children }) => {
 
         return () => subscription.unsubscribe();
     }, []);
+
+    const syncProfileToExtension = (profile) => {
+        if (!profile) return;
+
+        // Determine plan flags
+        const isPro = profile.plan === 'pro' || !!profile.ultra_premium;
+        const isUltra = !!profile.ultra_premium;
+
+        // Resolve limits (null = unlimited for ultra)
+        const normalLimit = isUltra ? null : (profile.normal_voice_limit ?? 50);
+        const cinematicLimit = isUltra ? null : (profile.cinematic_voice_limit ?? 10);
+
+        window.postMessage({
+            type: 'CINEMATIC_VOICE_PROFILE',
+            profile: {
+                plan: isUltra ? 'ultra' : (isPro ? 'pro' : 'free'),
+                is_pro: isPro,
+                is_ultra: isUltra,
+                normal_voice_limit: normalLimit,
+                cinematic_voice_limit: cinematicLimit,
+            }
+        }, '*');
+
+        console.log('[Cinematic Voice] Profile synced to extension — plan:', isPro ? (isUltra ? 'ultra' : 'pro') : 'free');
+    };
 
     const syncSessionToExtension = async (session) => {
         // 1. Store in localStorage (for website use)

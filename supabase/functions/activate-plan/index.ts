@@ -119,11 +119,21 @@ Deno.serve(async (req) => {
     let updateData: any = {}
 
     if (planType === 'pro_monthly' || planType === 'pro_yearly') {
-      updateData = { plan: 'pro' }
-      console.log('[EDGE] Setting plan to PRO');
+      // Pro plan: upgrade flag + set credit limits for extension enforcement
+      updateData = {
+        plan: 'pro',
+        normal_voice_limit: 500,
+        cinematic_voice_limit: 200,
+      }
+      console.log('[EDGE] Setting plan to PRO with limits: normal=500, cinematic=200');
     } else if (planType === 'ultra_yearly' || planType === 'ultra_monthly' || planType === 'ultra_premium') {
-      updateData = { ultra_premium: true }
-      console.log('[EDGE] Setting ultra_premium to true');
+      // Ultra / Lifetime: unlimited (null means no cap)
+      updateData = {
+        ultra_premium: true,
+        normal_voice_limit: null,
+        cinematic_voice_limit: null,
+      }
+      console.log('[EDGE] Setting ultra_premium to true (unlimited credits)');
     } else {
       console.error('[EDGE] Invalid plan type:', planType);
       return new Response(JSON.stringify({ error: 'Invalid plan type' }), {

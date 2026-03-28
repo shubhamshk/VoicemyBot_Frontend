@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
 
         const { data: userData, error: planError } = await supabaseAdmin
             .from('users')
-            .select('plan, ultra_premium')
+            .select('plan, ultra_premium, normal_voice_limit, cinematic_voice_limit')
             .eq('id', user.id)
             .single();
 
@@ -139,6 +139,17 @@ Deno.serve(async (req) => {
             userPlan = 'pro';
         }
 
+        // Resolve credit limits:
+        //  - ultra: null (unlimited)
+        //  - pro: 500 normal / 200 cinematic (or whatever is stored)
+        //  - free: 50 / 10
+        const normalLimit = userData.ultra_premium
+            ? null
+            : (userData.normal_voice_limit ?? 50);
+        const cinematicLimit = userData.ultra_premium
+            ? null
+            : (userData.cinematic_voice_limit ?? 10);
+
         // 5. Get Today's Usage from usage_daily table
         const today = new Date().toISOString().split('T')[0];
 
@@ -153,14 +164,20 @@ Deno.serve(async (req) => {
         const cinematicUsedToday = usageData?.cinematic_used ?? 0;
 
         // Log per requirements
-        console.log(`[EDGE] verifyUserPlan: ${user.id}, ${userPlan}, normal: ${normalUsedToday}, cinematic: ${cinematicUsedToday}`);
+        console.log(`[EDGE] verifyUserPlan: ${user.id}, ${userPlan}, normal: ${normalUsedToday}/${normalLimit}, cinematic: ${cinematicUsedToday}/${cinematicLimit}`);
 
-        // 6. Return result
+        // 6. Return result — extension uses these to show badge & remaining credits
         return jsonResponse({
             userId: user.id,
             plan: userPlan,
+            is_pro: userPlan === 'pro' || userPlan === 'ultra',
+            is_ultra: userPlan === 'ultra',
             normal_used_today: normalUsedToday,
             cinematic_used_today: cinematicUsedToday,
+            normal_limit: normalLimit,
+            cinematic_limit: cinematicLimit,
+            normal_remaining: normalLimit === null ? null : Math.max(0, normalLimit - normalUsedToday),
+            cinematic_remaining: cinematicLimit === null ? null : Math.max(0, cinematicLimit - cinematicUsedToday),
         });
 
     } catch (error: unknown) {
