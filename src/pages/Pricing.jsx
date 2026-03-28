@@ -125,7 +125,7 @@ const Pricing = () => {
                         </span>
                     </div>
                     {type === 'pro_yearly' && (
-                        <div className="text-white/40 text-sm mt-1">Billed $49 yearly</div>
+                        <div className="text-white/40 text-sm mt-1">Billed $4 yearly</div>
                     )}
                 </div>
 
@@ -313,7 +313,7 @@ const Pricing = () => {
                         <PricingCard
                             title="Pro"
                             subtitle="For serious creators needing unlimited access."
-                            price={billingCycle === 'yearly' ? '$49' : '$9'}
+                            price={billingCycle === 'yearly' ? '$4' : '$9'}
                             type={billingCycle === 'yearly' ? 'pro_yearly' : 'pro_monthly'}
                             recommended={true}
                             features={[
